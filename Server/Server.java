@@ -51,7 +51,6 @@ public class Server extends UnicastRemoteObject  implements Auction {
             itemMap.put(middleitem.itemID, sealedmiditem);
             itemMap.put(cheapItem.itemID, sealedcheapitem);
         } catch (IllegalBlockSizeException | IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -65,12 +64,8 @@ public class Server extends UnicastRemoteObject  implements Auction {
         }
     }
 
-    public static void main(String[] args) throws InvalidKeyException, NoSuchAlgorithmException, NoSuchPaddingException {
+    public static void main(String[] args) throws Exception {
         try {
-            KeyGenerator generator = KeyGenerator.getInstance("AES");
-            SecureRandom secureRandom = new SecureRandom();
-            generator.init(128,secureRandom);
-            Key keytowrap = generator.generateKey();
             Server server = new Server();
             String name = "myserver";
             Auction stub = (Auction) UnicastRemoteObject.exportObject(server, 0);
