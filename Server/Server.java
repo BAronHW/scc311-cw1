@@ -1,4 +1,6 @@
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -20,7 +22,7 @@ public class Server extends UnicastRemoteObject  implements Auction {
     private HashMap<Integer, SealedObject> itemMap = new HashMap<>();
     private SecretKey secretKey;
 
-    public Server() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+    public Server() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException, IllegalBlockSizeException, IOException {
         super();
         AuctionItem expensiveitem = new AuctionItem();
         expensiveitem.itemID = 1;
@@ -40,20 +42,27 @@ public class Server extends UnicastRemoteObject  implements Auction {
         middleitem.name = "ok";
         middleitem.description = "meh";
         middleitem.highestBid = 100;
-        
-        try {
+
+            
+            KeyGenerator keygen = KeyGenerator.getInstance("AES");
+            keygen.init(128);
+            secretKey = keygen.generateKey();
+            secretKey.toString();
+            System.out.println(secretKey);
             Cipher c = Cipher.getInstance("AES");
-            c.init(Cipher.ENCRYPT_MODE, secretKey);
+            c.init(Cipher.ENCRYPT_MODE,secretKey);
+            try(ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("sharedKey.txt"))){
+                out.writeObject(secretKey);
+            }catch(IOException e){
+                e.printStackTrace();
+            }
             SealedObject sealedexitem = new SealedObject(expensiveitem, c);
             SealedObject sealedcheapitem = new SealedObject(cheapItem, c);
             SealedObject sealedmiditem = new SealedObject(middleitem,c);
             itemMap.put(expensiveitem.itemID, sealedexitem);
-            itemMap.put(middleitem.itemID, sealedmiditem);
-            itemMap.put(cheapItem.itemID, sealedcheapitem);
-        } catch (IllegalBlockSizeException | IOException e) {
-            e.printStackTrace();
+            itemMap.put(middleitem.itemID, sealedcheapitem);
+            itemMap.put(cheapItem.itemID, sealedmiditem);
         }
-    }
 
     public SealedObject getSpec(int itemID) throws RemoteException {
         SealedObject sealeditem = itemMap.get(itemID);
@@ -65,16 +74,16 @@ public class Server extends UnicastRemoteObject  implements Auction {
     }
 
     public static void main(String[] args) throws Exception {
-        try {
-            Server server = new Server();
-            String name = "myserver";
-            Auction stub = (Auction) UnicastRemoteObject.exportObject(server, 0);
-            Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(name, stub);
-            System.out.println("Server ready");
-        } catch (RemoteException e) {
-            System.err.println("Exception:");
-            e.printStackTrace();
-        }
+    try {
+        Server server = new Server();
+        String name = "myserver";
+        Auction stub = (Auction) server;
+        Registry registry = LocateRegistry.getRegistry();
+        registry.rebind(name, stub);
+        System.out.println("Server ready");
+    } catch (RemoteException e) {
+        System.err.println("Exception:");
+        e.printStackTrace();
     }
+}
 }
