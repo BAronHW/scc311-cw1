@@ -1,4 +1,5 @@
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.ObjectInputStream;
@@ -25,6 +26,7 @@ public class Client {
 
             
             try {
+                String configfilepath = new File(System.getProperty("user.dir")).getParent()+"/Server/sharedKey.txt";
                 BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\Aaron Wan\\OneDrive - Lancaster University\\Documents\\my projects\\scc311-cw1\\Server\\sharedKey.txt"));
                 String encodedkey = br.readLine();
                 byte[] decodedkey = Base64.getDecoder().decode(encodedkey);
