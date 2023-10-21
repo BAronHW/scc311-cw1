@@ -1,7 +1,15 @@
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.ObjectInputStream;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.util.Base64;
 
+import javax.crypto.Cipher;
 import javax.crypto.SealedObject;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 public class Client {
     public static void main(String[] args) {
         if (args.length < 1) {
@@ -15,13 +23,27 @@ public class Client {
             Registry registry = LocateRegistry.getRegistry("localhost");
             Auction server = (Auction) registry.lookup(name);
 
-            SealedObject auitem = server.getSpec(id);
-            System.out.println(auitem);
-
-            // System.out.println("ItemID:"+auitem.itemID);
-            // System.out.println("Name:"+auitem.name);
-            // System.out.println("description"+auitem.description);
-            // System.out.println("highestBid"+auitem.highestBid);
+            
+            try {
+                BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\Aaron Wan\\OneDrive - Lancaster University\\Documents\\my projects\\scc311-cw1\\Server\\sharedKey.txt"));
+                String encodedkey = br.readLine();
+                byte[] decodedkey = Base64.getDecoder().decode(encodedkey);
+                SecretKey secretKey = new SecretKeySpec(decodedkey, 0, decodedkey.length, "AES");
+                SealedObject sealedObject = server.getSpec(id);
+                Cipher cipher = Cipher.getInstance("AES");
+                cipher.init(Cipher.DECRYPT_MODE, secretKey);
+                AuctionItem auitem = (AuctionItem) sealedObject.getObject(secretKey);
+                System.out.println("ItemID:"+auitem.itemID);
+                System.out.println("Name:"+auitem.name);
+                System.out.println("description"+auitem.description);
+                System.out.println("highestBid"+auitem.highestBid);
+                
+            } catch (Exception e) {
+                // TODO: handle exception
+                e.printStackTrace();
+            }
+            
+            
 
         } catch (Exception e) {
             System.err.println("Exception:");

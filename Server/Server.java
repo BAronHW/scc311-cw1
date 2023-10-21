@@ -1,6 +1,7 @@
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.PrintWriter;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -9,6 +10,7 @@ import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Hashtable;
 import javax.crypto.Cipher;
@@ -47,12 +49,12 @@ public class Server extends UnicastRemoteObject implements Auction {
             KeyGenerator keygen = KeyGenerator.getInstance("AES");
             keygen.init(128);
             secretKey = keygen.generateKey();
-            secretKey.toString();
-            System.out.println(secretKey);
+            String encodedkey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
             Cipher c = Cipher.getInstance("AES");
             c.init(Cipher.ENCRYPT_MODE,secretKey);
-            try(ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("sharedKey.txt"))){
-                out.writeObject(secretKey);
+            try(PrintWriter out = new PrintWriter(("sharedKey.txt"))){
+                out.println(encodedkey);
+
             }catch(IOException e){
                 e.printStackTrace();
             }
