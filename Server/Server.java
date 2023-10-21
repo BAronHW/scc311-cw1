@@ -69,7 +69,7 @@ public class Server extends UnicastRemoteObject implements Auction {
     public SealedObject getSpec(int itemID) throws RemoteException {
         SealedObject sealeditem = itemMap.get(itemID);
         if (sealeditem != null) {
-           return sealeditem;
+            return sealeditem;
         } else {
             throw new RemoteException("Item with ID " + itemID + " not found.");
         }
