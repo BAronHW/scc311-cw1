@@ -18,7 +18,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
-public class Server extends UnicastRemoteObject  implements Auction {
+public class Server extends UnicastRemoteObject implements Auction {
     private HashMap<Integer, SealedObject> itemMap = new HashMap<>();
     private SecretKey secretKey;
 
