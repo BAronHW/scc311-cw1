@@ -13,7 +13,7 @@ public class Client {
             Registry registry = LocateRegistry.getRegistry("localhost");
             Auction server = (Auction) registry.lookup(name);
 
-            AuctionItem a1 = server.getSpec(1);
+            AuctionItem a1 = server.getSpec(id);
             System.out.println("empty auctionitem obj:"+ a1.itemID);
             System.out.println("empty auctionitem obj:"+ a1.name);
             System.out.println("empty auctionitem obj:"+ a1.description);

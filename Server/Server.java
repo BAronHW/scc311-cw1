@@ -62,8 +62,8 @@ public class Server extends UnicastRemoteObject implements Auction {
             SealedObject sealedcheapitem = new SealedObject(cheapItem, c);
             SealedObject sealedmiditem = new SealedObject(middleitem,c);
             itemMap.put(expensiveitem.itemID, sealedexitem);
-            itemMap.put(middleitem.itemID, sealedcheapitem);
-            itemMap.put(cheapItem.itemID, sealedmiditem);
+            itemMap.put(middleitem.itemID, sealedmiditem);
+            itemMap.put(cheapItem.itemID, sealedcheapitem);
         }
 
     public SealedObject getSpec(int itemID) throws RemoteException {
