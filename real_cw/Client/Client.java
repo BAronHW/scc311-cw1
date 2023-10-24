@@ -26,7 +26,7 @@ public class Client {
 
             
             try {
-                String configfilepath = new File(System.getProperty("user.dir")).getParent()+"/keys/testKey.txt";
+                String configfilepath = new File(System.getProperty("user.dir")).getParent()+"/keys/testKey.aes";
                 BufferedReader br = new BufferedReader(new FileReader(configfilepath));
                 String encodedkey = br.readLine();
                 byte[] decodedkey = Base64.getDecoder().decode(encodedkey);

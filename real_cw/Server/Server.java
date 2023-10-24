@@ -56,7 +56,7 @@ public class Server extends UnicastRemoteObject implements Auction {
             Cipher c = Cipher.getInstance("AES");
             c.init(Cipher.ENCRYPT_MODE,secretKey);
             String dirpath = new File(System.getProperty("user.dir")).getParent()+"/keys";
-            String filename = "testKey.txt";
+            String filename = "testKey.aes";
             String filepath = Paths.get(dirpath,filename).toString();
             try(PrintWriter out = new PrintWriter((filepath))){
                 out.println(encodedkey);
