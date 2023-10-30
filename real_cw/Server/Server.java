@@ -1,23 +1,17 @@
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.Hashtable;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
@@ -40,12 +34,7 @@ public class Server extends UnicastRemoteObject implements Auction {
             File keyfile = new File(filepath);
 
             if(!keyfile.exists()||keyfile.length()==0){
-                KeyGenerator keygen = KeyGenerator.getInstance("AES");
-                keygen.init(128);
-                secretKey = keygen.generateKey();
-                String encodedkey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
-                Cipher c = Cipher.getInstance("AES");
-                c.init(Cipher.ENCRYPT_MODE,secretKey);
+                String encodedkey = genKey();
                 try(PrintWriter out = new PrintWriter((filepath))){
                     out.println(encodedkey);
 
@@ -98,6 +87,47 @@ public class Server extends UnicastRemoteObject implements Auction {
             throw new RemoteException("Item with ID " + itemID + " not found.");
         }
     }
+    
+    public String genKey() throws NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException{
+        KeyGenerator keygen = KeyGenerator.getInstance("AES");
+                keygen.init(128);
+                secretKey = keygen.generateKey();
+                String encodedkey = Base64.getEncoder().encodeToString(secretKey.getEncoded());
+                Cipher c = Cipher.getInstance("AES");
+                c.init(Cipher.ENCRYPT_MODE,secretKey);
+        
+        return encodedkey;
+    }
+
+    @Override
+    public Integer register(String email) throws RemoteException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'register'");
+    }
+
+    @Override
+    public Integer newAuction(int userID, AuctionSaleItem item) throws RemoteException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'newAuction'");
+    }
+
+    @Override
+    public AuctionItem[] listItems() throws RemoteException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'listItems'");
+    }
+
+    @Override
+    public AuctionResult closeAuction(int userID, int itemID) throws RemoteException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'closeAuction'");
+    }
+
+    @Override
+    public boolean bid(int userID, int itemID, int price) throws RemoteException {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'bid'");
+    }
 
     public static void main(String[] args) throws Exception {
     try {
@@ -112,4 +142,6 @@ public class Server extends UnicastRemoteObject implements Auction {
         e.printStackTrace();
     }
 }
+
+    
 }
