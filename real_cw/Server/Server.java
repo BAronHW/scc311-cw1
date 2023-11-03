@@ -10,8 +10,11 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.List;
+
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.KeyGenerator;
@@ -113,10 +116,27 @@ public class Server extends UnicastRemoteObject implements Auction {
 
     @Override
     public AuctionItem[] listItems() throws RemoteException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'listItems'");
-    }
+        try {
+            //initialize a new arraylist to hold the auction items
+        List<AuctionItem> itemList = new ArrayList<>();
 
+        //foreach loop to loop through all the values in the hashmap that stores the items
+        //using the secret key decrypt the sealedobject to the get the auction items
+        //then add the unwrapped auctiontiems to the newly initialized arraylist
+        for (SealedObject sealedItem : itemMap.values()) {
+            AuctionItem item = (AuctionItem) sealedItem.getObject(secretKey);
+            itemList.add(item);
+        }
+        //we then initialize a new array to the size of the arraylist
+        //we then move the auctionitems from the arraylist to the array.
+        AuctionItem[] itemsArray = new AuctionItem[itemList.size()];
+        itemsArray = itemList.toArray(itemsArray);
+        return itemsArray;
+    } catch (Exception e) {
+        throw new RemoteException("Error while listing items: " + e.getMessage());
+    }
+    }
+    
     @Override
     public AuctionResult closeAuction(int userID, int itemID) throws RemoteException {
         // TODO Auto-generated method stub
@@ -145,3 +165,4 @@ public class Server extends UnicastRemoteObject implements Auction {
 
     
 }
+

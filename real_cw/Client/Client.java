@@ -3,6 +3,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileReader;
 import java.io.ObjectInputStream;
+import java.lang.reflect.Array;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Base64;
@@ -18,12 +19,17 @@ public class Client {
             return;
         }
         int id = Integer.parseInt(args[0]);
+
+        
         
         try{
             String name = "Auction";
             Registry registry = LocateRegistry.getRegistry("localhost");
             Auction server = (Auction) registry.lookup(name);
 
+            AuctionItem[] array = server.listItems();
+            array.toString();
+            System.out.println(array);
             
             try {
                 String configfilepath = new File(System.getProperty("user.dir")).getParent()+"/keys/testKey.aes";
