@@ -21,6 +21,9 @@ public class Client {
                         break;
                     case "list":
                         AuctionItem[] array = server.listItems();
+                        if (array.length == 0) {
+                            System.out.println("You have no items!");
+                        }
                         for (AuctionItem i : array) {
                             System.out.println("Name: " + i.name +
                                     "\nDescription: " + i.description +
@@ -44,6 +47,61 @@ public class Client {
                             System.out.println("invalid itemID");
                         }
                         break;
+                        case "register":
+                        System.out.println("please enter your email address");
+                        if (scanner.hasNext()) {
+                            String email = scanner.next();
+                            int userid = server.register(email);
+                            System.out.println("This is your userID: " + userid);
+                        }
+                        break;
+
+                        case "newauction":
+                            System.out.println("Enter your user ID:");
+                            if (scanner.hasNextInt()) {
+                                int userID = scanner.nextInt();
+                                scanner.nextLine();  // Consume the newline character
+                                AuctionSaleItem newItem = new AuctionSaleItem();
+                                System.out.println("Enter your item name:");
+                                newItem.name = scanner.nextLine();
+                                System.out.println("Enter your item description:");
+                                newItem.description = scanner.nextLine();
+                                System.out.println("Enter a reserve Price: ");
+                                newItem.reservePrice = scanner.nextInt();
+                                server.newAuction(userID, newItem);
+                            } else {
+                                System.out.println("Invalid input. User ID must be an integer.");
+                                scanner.nextLine();  // Consume the invalid input
+                            }
+                            break;
+                            
+                            case "closeauction":
+                            System.out.println("Enter your USER ID:");
+                            if (scanner.hasNextInt()) {
+                                int userID = scanner.nextInt();
+                                scanner.nextLine();
+                                System.out.println("Enter the Item id:");
+                                int itemid = scanner.nextInt();
+                                AuctionResult result = server.closeAuction(userID, itemid);
+                                System.out.println("Winner Email: "+result.winningEmail + "\n" + "Winning price: " + result.winningPrice);
+                            }
+                            break;
+                            case "bid":
+                            System.out.println("enter your USER ID:");
+                            if (scanner.hasNextInt()) {
+                                int userid = scanner.nextInt();
+                                System.out.println("Enter item ID: ");
+                                int itemid = scanner.nextInt();
+                                System.out.println("enter a price");
+                                int price = scanner.nextInt();
+                                Boolean result = server.bid(userid, itemid, price);
+                                if (result == true) {
+                                    System.out.println("success! you have successfully bid!");
+                                }else{
+                                    System.out.println("something went wrong either your bid wasnt high enough or you are not registered or your item does not exist");
+                                }
+                            }
+                            break;
                     
                 }
             }
