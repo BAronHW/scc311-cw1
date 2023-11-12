@@ -1,7 +1,7 @@
 import java.io.Serializable;
 
 public class AuctionResult implements java.io.Serializable {
- String winningEmail;
+String winningEmail;
 int winningPrice;
 }
 

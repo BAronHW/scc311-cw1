@@ -1,70 +1,40 @@
-import java.io.IOException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
-import java.security.Key;
 import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.Hashtable;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.KeyGenerator;
+import java.util.ArrayList;
+import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.NoSuchPaddingException;
-import javax.crypto.SealedObject;
-import javax.crypto.SecretKey;
 
 public class Server implements Auction {
-    private static int itemID = 0;
     private static int userID = 0;
-    private HashMap<Integer, AuctionItem> itemMap = new HashMap<>();
-    private HashMap<Integer,String> userHashMap = new HashMap<>();
-    private HashMap<Integer,AuctionSaleItem> auctionSaleItemmap = new HashMap<>();
-    
+    private ArrayList<Integer> itemidlist = new ArrayList<Integer>();
+    private ConcurrentHashMap<Integer, AuctionItem> itemMap = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, Integer> useridanditem = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, String> userHashMap = new ConcurrentHashMap<>();
+
     public Server() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
-        AuctionItem expensiveitem = new AuctionItem();
-        expensiveitem.itemID = 1;
-        expensiveitem.name = "expensive";
-        expensiveitem.description = "its over 9000";
-        expensiveitem.highestBid = 700;
-
-        AuctionItem cheapItem = new AuctionItem();
-        cheapItem.itemID = 30;
-        cheapItem.name = "cheap";
-        cheapItem.description = "its less than 9000";
-        cheapItem.highestBid = 70;
-        
-
-        AuctionItem middleitem = new AuctionItem();
-        middleitem.itemID = 40;
-        middleitem.name = "ok";
-        middleitem.description = "meh";
-        middleitem.highestBid = 100;
-        
-        itemMap.put(expensiveitem.itemID, expensiveitem);
-        itemMap.put(middleitem.itemID, middleitem);
-        itemMap.put(cheapItem.itemID, cheapItem);
     }
 
     public static void main(String[] args) throws Exception {
         try {
             Server server = new Server();
-            String name = "myserver";
             Auction stub = (Auction) UnicastRemoteObject.exportObject(server, 0);
-            Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(name, stub);
+            Registry registry = LocateRegistry.createRegistry(1099);
+            registry.rebind("myserver", stub);
             System.out.println("Server ready");
         } catch (RemoteException e) {
             System.err.println("Exception:");
             e.printStackTrace();
         }
-        
     }
 
-    public AuctionItem getSpec(int itemID) throws RemoteException {
+    @Override
+    public synchronized AuctionItem getSpec(int itemID) throws RemoteException {
         AuctionItem item = itemMap.get(itemID);
         if (item != null) {
             return item;
@@ -74,53 +44,87 @@ public class Server implements Auction {
     }
 
     @Override
-    public Integer register(String email) throws RemoteException {
-        //get the user to input email address
-        // increase userid by 1
-        // after taking user email give unique userID and put int hashmap
+    public synchronized Integer register(String email) throws RemoteException {
         userID++;
-        userHashMap.put(userID,email);
+        userHashMap.put(userID, email);
         return userID;
     }
 
-    @Override
-    public Integer newAuction(int userID, AuctionSaleItem item) throws RemoteException {
-        // when given an exiting userid and auctionsaleitem
-        // if userhashmap contains userid meaning if that the userid is already registered 
-        // put the item auctionsaleitem into a hashmap as the value and itemid as the key
-        // return itemid 
-        if (userHashMap.containsKey(userID)) {
-            itemID++;
-            auctionSaleItemmap.put(itemID, item);
-        }else{
-            System.out.println("you are not registered!");
-        }
-        return itemID;
-        
+@Override
+public synchronized Integer newAuction(int userID, AuctionSaleItem item) throws RemoteException {
+    if (userHashMap.containsKey(userID)) {
+        Random rand = new Random();
+        int id;
+
+        // Generate a unique item ID
+        do {
+            id = rand.nextInt(100);
+        } while (itemidlist.contains(id));
+
+        itemidlist.add(id);  // Add the new ID to the list
+
+        AuctionItem auctionItem = new AuctionItem();
+        auctionItem.itemID = id;
+        auctionItem.name = item.name;
+        auctionItem.description = item.description;
+        auctionItem.highestBid = item.reservePrice;
+
+        itemMap.put(id, auctionItem);
+        useridanditem.put(userID, auctionItem.itemID);
+
+        return id;
+    } else {
+        System.out.println("You are not registered!");
+        return null;
     }
+}
+
 
     @Override
-    public AuctionItem[] listItems() throws RemoteException {
+    public synchronized AuctionItem[] listItems() throws RemoteException {
         AuctionItem[] itemArray = itemMap.values().toArray(new AuctionItem[0]);
         return itemArray;
     }
 
     @Override
-    public AuctionResult closeAuction(int userID, int itemID) throws RemoteException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'closeAuction'");
+    public synchronized AuctionResult closeAuction(int userID, int itemID) throws RemoteException {
+        try {
+            AuctionItem closeItem = itemMap.get(itemID);
+            if (closeItem != null && useridanditem.containsKey(userID) && useridanditem.get(userID) == itemID) {
+                String winemail = userHashMap.get(userID);
+                AuctionResult result = new AuctionResult();
+                result.winningEmail = winemail;
+                result.winningPrice = closeItem.highestBid;
+                itemMap.remove(itemID);
+                return result;
+            } else {
+                throw new RemoteException("You don't have permission to close this auction.");
+            }
+        } catch (NullPointerException e) {
+            throw new RemoteException("An error occurred while closing the auction.", e);
+        }
     }
 
     @Override
-    public boolean bid(int userID, int itemID, int price) throws RemoteException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'bid'");
+    public synchronized boolean bid(int userID, int itemID, int price) throws RemoteException {
+        if (!userHashMap.containsKey(userID)) {
+            System.out.println("User not registered.");
+            return false;
+        }
+
+        AuctionItem item = itemMap.get(itemID);
+        if (item == null) {
+            System.out.println("Item not found.");
+            return false;
+        }
+
+        if (price > item.highestBid) {
+            item.highestBid = price;
+            System.out.println("Bid successful. New highest bid: " + price);
+            return true;
+        } else {
+            System.out.println("Bid not successful. Bid price must be greater than the current highest bid.");
+            return false;
+        }
     }
 }
-
-/*
- * TODO:
- * 1. create auction
- * 2. close auction
- * 3. bid 
- */
