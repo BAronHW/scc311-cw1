@@ -17,7 +17,11 @@ import javax.crypto.SealedObject;
 import javax.crypto.SecretKey;
 
 public class Server implements Auction {
+    private static int itemID = 0;
+    private static int userID = 0;
     private HashMap<Integer, AuctionItem> itemMap = new HashMap<>();
+    private HashMap<Integer,String> userHashMap = new HashMap<>();
+    private HashMap<Integer,AuctionSaleItem> auctionSaleItemmap = new HashMap<>();
     
     public Server() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
@@ -71,20 +75,34 @@ public class Server implements Auction {
 
     @Override
     public Integer register(String email) throws RemoteException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'register'");
+        //get the user to input email address
+        // increase userid by 1
+        // after taking user email give unique userID and put int hashmap
+        userID++;
+        userHashMap.put(userID,email);
+        return userID;
     }
 
     @Override
     public Integer newAuction(int userID, AuctionSaleItem item) throws RemoteException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'newAuction'");
+        // when given an exiting userid and auctionsaleitem
+        // if userhashmap contains userid meaning if that the userid is already registered 
+        // put the item auctionsaleitem into a hashmap as the value and itemid as the key
+        // return itemid 
+        if (userHashMap.containsKey(userID)) {
+            itemID++;
+            auctionSaleItemmap.put(itemID, item);
+        }else{
+            System.out.println("you are not registered!");
+        }
+        return itemID;
+        
     }
 
     @Override
     public AuctionItem[] listItems() throws RemoteException {
-        AuctionItem[] itemlist = (AuctionItem[]) itemMap.values().toArray();
-        return itemlist;
+        AuctionItem[] itemArray = itemMap.values().toArray(new AuctionItem[0]);
+        return itemArray;
     }
 
     @Override
@@ -99,3 +117,10 @@ public class Server implements Auction {
         throw new UnsupportedOperationException("Unimplemented method 'bid'");
     }
 }
+
+/*
+ * TODO:
+ * 1. create auction
+ * 2. close auction
+ * 3. bid 
+ */
