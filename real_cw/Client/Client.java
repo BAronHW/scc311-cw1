@@ -29,30 +29,28 @@ public class Client {
                                     "\n");
                         }
                         break;
-                    default:
-                        if (cmd.startsWith("getSpec")) {
-                            // Extract itemID from the command (assuming the format is "getSpec <itemID>")
-                            String[] parts = cmd.split(" ");
-                            if (parts.length == 2) {
-                                int itemID = Integer.parseInt(parts[1]);
-                                AuctionItem auitem = server.getSpec(itemID);
+                        case "getspec":
+                        // Extract itemID from the command (assuming the format is "getSpec <itemID>")
+                        System.out.println("enter an itemID");
+                        if (scanner.hasNextInt()) {
+                            int id = scanner.nextInt();
+                            AuctionItem auitem = server.getSpec(id);
                                 System.out.println("Name: " + auitem.name +
                                         "\nDescription: " + auitem.description +
                                         "\nItemID: " + auitem.itemID +
                                         "\nHighestBid: " + auitem.highestBid +
                                         "\n");
-                            } else {
-                                System.out.println("Invalid command. Use 'getSpec <itemID>' format.");
-                            }
-                        } else {
-                            System.out.println("Invalid command. Try 'exit', 'list', or 'getSpec <itemID>'.");
+                        } else{
+                            System.out.println("invalid itemID");
                         }
                         break;
+                    
                 }
             }
+            
         } catch (Exception e) {
             System.err.println("Exception:");
             e.printStackTrace();
         }
-    }
+}
 }

@@ -18,8 +18,7 @@ import javax.crypto.SecretKey;
 
 public class Server implements Auction {
     private HashMap<Integer, AuctionItem> itemMap = new HashMap<>();
-    private SecretKey secretKey;
-
+    
     public Server() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
         AuctionItem expensiveitem = new AuctionItem();
@@ -84,8 +83,6 @@ public class Server implements Auction {
 
     @Override
     public AuctionItem[] listItems() throws RemoteException {
-        // TODO Auto-generated method stub
-        // throw new UnsupportedOperationException("Unimplemented method 'listItems'");
         AuctionItem[] itemlist = (AuctionItem[]) itemMap.values().toArray();
         return itemlist;
     }
