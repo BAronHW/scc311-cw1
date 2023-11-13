@@ -7,5 +7,5 @@ public interface Auction extends Remote {
  public Integer newAuction(int userID, AuctionSaleItem item) throws RemoteException;
  public AuctionItem[] listItems() throws RemoteException;
  public AuctionResult closeAuction(int userID, int itemID) throws RemoteException;
- public boolean bid(int userID, int itemID, int price) throws RemoteException;
+ public boolean bid(int userID, int itemID, int price) throws RemoteException, InterruptedException;
 }
