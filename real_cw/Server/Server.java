@@ -1,23 +1,44 @@
+import java.io.FileOutputStream;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.util.Base64;
 import javax.crypto.NoSuchPaddingException;
 
 public class Server implements Auction {
-    private static int userID = 0;
+    private static int userID;
     private AuctionData auctionData;
+    private KeyPairGenerator generator;
+    private static KeyPair pair;
 
     public Server() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
-        auctionData = new AuctionData();
+        this.auctionData = new AuctionData();
+        Server.userID = 0;
+
+        try {
+            this.generator = KeyPairGenerator.getInstance("RSA");
+            this.generator.initialize(2048,new SecureRandom());
+            Server.pair = generator.generateKeyPair();
+
+            PrivateKey privkey = pair.getPrivate();
+            PublicKey pubkey = pair.getPublic();
+
+            storePublicKey(pubkey,"../keys/server_public.key");
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
     }
-    
+
     public static void main(String[] args) {
         try {
             Server server = new Server();
@@ -29,37 +50,76 @@ public class Server implements Auction {
             System.err.println("Exception:");
             e.printStackTrace();
         }
+        
+    }
+
+
+
+    // Method to write a public key to a file.
+// Example use: storePublicKey(aPublicKey, ‘../keys/serverKey.pub’)
+    public void storePublicKey(PublicKey publicKey, String filePath) throws Exception {
+    // Convert the public key to a byte array
+        byte[] publicKeyBytes = publicKey.getEncoded();
+    // Encode the public key bytes as Base64
+        String publicKeyBase64 = Base64.getEncoder().encodeToString(publicKeyBytes);
+    // Write the Base64 encoded public key to a file
+        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+        fos.write(publicKeyBase64.getBytes());
+        }
+    }
+
+
+    @Override
+    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException {
+        throw new UnsupportedOperationException("Unimplemented method 'challenge'");
     }
 
     @Override
-    public synchronized Integer register(String email) throws RemoteException {
+    public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
+        throw new UnsupportedOperationException("Unimplemented method 'authenticate'");
+    }
+    
+    @Override
+    public Integer register(String email, PublicKey pubKey) throws RemoteException {
         userID++;
-        return auctionData.registerUser(userID, email);
+        System.out.println(pubKey);
+        return auctionData.registerUser(userID, email, pubKey);
     }
 
     @Override
-    public synchronized Integer newAuction(int userID, AuctionSaleItem item) throws RemoteException {
+    public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
+        return auctionData.getSpec(itemID);
+    }
+
+    @Override
+    public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
         return auctionData.createNewAuction(userID, item);
     }
 
     @Override
-    public synchronized AuctionItem[] listItems() throws RemoteException {
+    public AuctionItem[] listItems(int userID, String token) throws RemoteException {
         return auctionData.listItems();
     }
 
     @Override
-    public synchronized AuctionResult closeAuction(int userID, int itemID) throws RemoteException {
+    public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
         return auctionData.closeAuction(userID, itemID);
     }
 
     @Override
-    public synchronized boolean bid(int userID, int itemID, int price) throws RemoteException {
+    public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
         return auctionData.placeBid(userID, itemID, price);
     }
 
-    @Override
-    public synchronized AuctionItem getSpec(int itemID) throws RemoteException {
-        return auctionData.getSpec(itemID);
-    }
-
 }
+
+/*
+ * TODO:
+ * 1. implement challengeinfo 
+ * 2. implement tokeninfo
+ * 3. modify getspec
+ * 4. modify newauction
+ * 5. modify listauction
+ * 6. modify close auction
+ * 7. modify bid
+ */
