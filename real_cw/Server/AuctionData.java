@@ -11,6 +11,9 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 class AuctionData {
     private static int id = 0;
@@ -21,8 +24,10 @@ class AuctionData {
     private static HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
     private static HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
     private HashMap<Integer,String> usertokenmap;
+    private HashMap<Integer,Long> expiretimemap = new HashMap<Integer,Long>();
     private KeyPairGenerator generator;
     private static KeyPair pair;
+    private static ScheduledExecutorService executorService;
 
     public AuctionData() {
         super();
@@ -31,6 +36,7 @@ class AuctionData {
         this.userHashMap = new ConcurrentHashMap<>();
         this.highestBidders = new ConcurrentHashMap<>();
         this.usertokenmap = new HashMap<>();
+        executorService = Executors.newScheduledThreadPool(1);
         try {
             this.generator = KeyPairGenerator.getInstance("RSA");
             this.generator.initialize(2048,new SecureRandom());
@@ -199,6 +205,7 @@ class AuctionData {
                 tokenInfo.token = tokenstring;
                 tokenInfo.expiryTime = expirationTimeMillis;
                 usertokenmap.put(userID, tokenstring);
+                expiretimemap.put(userID, tokenInfo.expiryTime);
                 System.out.println("THIS IS TOKEN"+tokenstring);
                 // Return the TokenInfo object
                 return tokenInfo;
@@ -218,25 +225,44 @@ class AuctionData {
     private static String generateToken() {
         return UUID.randomUUID().toString();
     }
-
-    private boolean validateToken(int userID, String token) {
-        String tokeString = usertokenmap.get(userID);
-        if (tokeString != null && usertokenmap.remove(userID, tokeString)) {
-            return tokeString.equals(token);
-        } else {
-            return false;
-        }
+    private void scheduleTokenExpiration(int userID) {
+        executorService.schedule(() -> {
+            // Remove the token logic
+            dumpToken(userID);
+        }, 10, TimeUnit.SECONDS); // Adjust the expiration time as needed
     }
-    
-    
 
     private void dumpToken(int userID){
         usertokenmap.remove(userID);
+        System.out.println("Token has expired for user" + userID);
     }
+
+    private boolean validateToken(int userID, String token) {
+        if (usertokenmap.containsKey(userID)) {
+            String tokeString = usertokenmap.get(userID);
+            if (tokeString.equals(token)&&expiretimemap.containsKey(userID)) {
+                Long expiretime = expiretimemap.get(userID);
+                if (System.currentTimeMillis()<expiretime) {
+                    scheduleTokenExpiration(userID);
+                    return true;
+                }else{
+                dumpToken(userID); 
+                
+            }
+            }
+        }
+        return false;
+        
+    }
+    
+}
+
+
+
+
 
     /*
      * after the token is generated the server has to send the token to the client and the server also has to store it with the userid as a key and token as a value
      * 
      * make new hashmap of userid and the token that corresponds to the the userid.
      */
-}
