@@ -2,12 +2,15 @@ import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.UUID;
@@ -93,19 +96,8 @@ public class Client {
                             
                             if (scanner.hasNextInt()) {
                                 int userID = scanner.nextInt();
-                                PrivateKey thisclientskey = everyuserprivkey.get(userID);
-                                String randomString = UUID.randomUUID().toString();
-                                ChallengeInfo challengeInfo = server.challenge(userID, randomString);
-                                Signature sig = Signature.getInstance("SHA256withRSA");
-                                System.out.println(thisclientskey);
-                                sig.initSign(thisclientskey);
-                                sig.update(challengeInfo.clientChallenge.getBytes());
-                                byte[] digitalSignature = sig.sign();
-                                // ChallengeInfo challengeInfo = new ChallengeInfo();
-                                System.out.println(challengeInfo.clientChallenge);
+                                TokenInfo newtoken = gTokenInfo(userID, server);
                                 
-                                TokenInfo tokenInfo = server.authenticate(userID, digitalSignature);
-
                                 scanner.nextLine();  // Consume the newline character
                                 AuctionSaleItem newItem = new AuctionSaleItem();
                                 System.out.println("Enter your item name:");
@@ -114,7 +106,7 @@ public class Client {
                                 newItem.description = scanner.nextLine();
                                 System.out.println("Enter a reserve Price: ");
                                 newItem.reservePrice = scanner.nextInt();
-                                server.newAuction(userID, newItem,tokenInfo.token);
+                                server.newAuction(userID, newItem,newtoken.token);
                             } else {
                                 System.out.println("Invalid input. User ID must be an integer.");
                                 scanner.nextLine();  // Consume the invalid input
@@ -164,6 +156,22 @@ public class Client {
 
         public static KeyPair getPair() {
             return pair;
+        }
+
+        public static TokenInfo gTokenInfo(int userid, Auction server) throws InvalidKeyException, RemoteException, NoSuchAlgorithmException, SignatureException{
+            PrivateKey thisclientskey = everyuserprivkey.get(userid);
+            String randomString = UUID.randomUUID().toString();
+            ChallengeInfo challengeInfo = server.challenge(userid, randomString);
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            System.out.println(thisclientskey);
+            sig.initSign(thisclientskey);
+            sig.update(challengeInfo.clientChallenge.getBytes());
+            byte[] digitalSignature = sig.sign();
+            // ChallengeInfo challengeInfo = new ChallengeInfo();
+            System.out.println(challengeInfo.clientChallenge);
+            
+            TokenInfo tokenInfo = server.authenticate(userid, digitalSignature);
+            return tokenInfo;
         }
 
     }
