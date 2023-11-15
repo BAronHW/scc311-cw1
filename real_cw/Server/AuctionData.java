@@ -1,21 +1,14 @@
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
-import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
-import java.security.SignatureException;
-import java.sql.Date;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -25,8 +18,9 @@ class AuctionData {
     private ConcurrentHashMap<Integer, Integer> useridanditem;
     private ConcurrentHashMap<Integer, String> userHashMap;
     private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
-    private HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
-    private HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
+    private static HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
+    private static HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
+    private HashMap<Integer,String> usertokenmap;
     private KeyPairGenerator generator;
     private static KeyPair pair;
 
@@ -36,15 +30,13 @@ class AuctionData {
         this.useridanditem = new ConcurrentHashMap<>();
         this.userHashMap = new ConcurrentHashMap<>();
         this.highestBidders = new ConcurrentHashMap<>();
+        this.usertokenmap = new HashMap<>();
         try {
             this.generator = KeyPairGenerator.getInstance("RSA");
             this.generator.initialize(2048,new SecureRandom());
             AuctionData.pair = generator.generateKeyPair();
-
-            
             PublicKey pubkey = pair.getPublic();
-
-            storePublicKey(pubkey,"../keys/server_public.key");
+            storePublicKey(pubkey,"../keys/server_public.pub");
 
         } catch (Exception e) {
             System.out.println(e);
@@ -71,7 +63,9 @@ class AuctionData {
         return userID;
     }
 
-    public int createNewAuction(int userID, AuctionSaleItem item) {
+    public int createNewAuction(int userID, AuctionSaleItem item, String token){
+        boolean booleantoken = validateToken(userID, token);
+        if(booleantoken == true){
         id++;
         AuctionItem auctionItem = new AuctionItem();
         auctionItem.itemID = id;
@@ -81,16 +75,27 @@ class AuctionData {
 
         itemMap.put(id, auctionItem);
         useridanditem.put(userID, auctionItem.itemID);
-
+        }
         return id;
     }
 
-    public AuctionItem[] listItems() {
-        return itemMap.values().toArray(new AuctionItem[0]);
+    public AuctionItem[] listItems(int userID, String token) {
+        boolean booleantoken = validateToken(userID, token);
+        AuctionItem[] array = null;  // Initialize array outside the if block
+    
+        if (booleantoken) {
+            array = itemMap.values().toArray(new AuctionItem[0]);
+        }
+    
+        return array;  // Move the return statement outside the if block
     }
+    
+    
 
-    public AuctionResult closeAuction(int userID, int itemID) {
-        AuctionItem closeItem = itemMap.get(itemID);
+    public AuctionResult closeAuction(int userID, int itemID, String token) {
+        boolean booleantoken = validateToken(userID, token);
+        if (booleantoken) {
+            AuctionItem closeItem = itemMap.get(itemID);
         if (closeItem != null && useridanditem.containsKey(userID) && useridanditem.get(userID) == itemID) {
             int highestBidderID = highestBidders.get(itemID);
             String winemail = userHashMap.get(highestBidderID);
@@ -103,10 +108,17 @@ class AuctionData {
         } else {
             return null; // or throw an exception indicating permission issue
         }
+        }else{
+            return null;
+        }
+        
+        
     }
 
-    public boolean placeBid(int userID, int itemID, int price) {
-        if (!userHashMap.containsKey(userID)) {
+    public boolean placeBid(int userID, int itemID, int price, String token) {
+        boolean booleantoken = validateToken(userID, token);
+        if (booleantoken) {
+            if (!userHashMap.containsKey(userID)) {
             System.out.println("User not registered.");
             return false;
         }
@@ -126,15 +138,22 @@ class AuctionData {
             System.out.println("Bid not successful. Bid price must be greater than the current highest bid.");
             return false;
         }
+        }
+        return booleantoken;
+        
     }
 
-    public AuctionItem getSpec(int itemID) {
-        AuctionItem item = itemMap.get(itemID);
-        if (item != null) {
-            return item;
-        } else {
-            return null; // or throw an exception indicating item not found
+    public AuctionItem getSpec(int itemID,int UserID, String token) {
+        boolean booleantoken = validateToken(UserID, token);
+        if (booleantoken) {
+            AuctionItem item = itemMap.get(itemID);
+            if (item != null) {
+                return item;
+            } else {
+                return null; // or throw an exception indicating item not found
+            }
         }
+        return null;
     }
 
     public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
@@ -160,18 +179,15 @@ class AuctionData {
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
         try {
             PublicKey cPublicKey = everyuserpubkey.get(userID);
-    
             // Verify the signature using the client's public key
             Signature sig = Signature.getInstance("SHA256withRSA");
             sig.initVerify(cPublicKey);
             String random = randomstringhashmap.get(userID);
             sig.update(random.getBytes());
             boolean isValidSignature = sig.verify(signature);
-    
             if (isValidSignature) {
                 // Generate a one-time use token
                 String tokenstring = generateToken();
-    
                 // Set the expiration time (e.g., 10 seconds from now)
                 long expirationTimeMillis = System.currentTimeMillis() + 10 * 1000; // 10 seconds
     
@@ -179,7 +195,8 @@ class AuctionData {
                 TokenInfo tokenInfo = new TokenInfo();
                 tokenInfo.token = tokenstring;
                 tokenInfo.expiryTime = expirationTimeMillis;
-    
+                usertokenmap.put(userID, tokenstring);
+                System.out.println("THIS IS TOKEN"+tokenstring);
                 // Return the TokenInfo object
                 return tokenInfo;
             } else {
@@ -189,13 +206,29 @@ class AuctionData {
         } catch (Exception e) {
             System.out.println("Exception during authentication: " + e.getMessage());
         }
-    
+        
         // Return null if authentication fails
         return null;
     }
     
     // Helper method to generate a random token (you can adjust it based on your requirements)
-    private String generateToken() {
+    private static String generateToken() {
         return UUID.randomUUID().toString();
     }
+
+    private boolean validateToken(int userID, String token) {
+        String tokeString = usertokenmap.get(userID);
+        return tokeString != null && tokeString.equals(token);
+    }
+    
+
+    private void useToken(int userID, String token){
+        // retrieve the token 
+    }
+
+    /*
+     * after the token is generated the server has to send the token to the client and the server also has to store it with the userid as a key and token as a value
+     * 
+     * make new hashmap of userid and the token that corresponds to the the userid.
+     */
 }

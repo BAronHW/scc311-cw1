@@ -63,36 +63,33 @@ public class Server implements Auction {
 
     @Override
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
-        return auctionData.getSpec(itemID);
+        return auctionData.getSpec(itemID,userID,token);
     }
 
     @Override
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
-        return auctionData.createNewAuction(userID, item);
+        int id = auctionData.createNewAuction(userID, item, token);
+        return id;
     }
 
     @Override
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
-        return auctionData.listItems();
+        return auctionData.listItems(userID, token);
     }
 
     @Override
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
-        return auctionData.closeAuction(userID, itemID);
+        return auctionData.closeAuction(userID, itemID,token);
     }
 
     @Override
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
-        return auctionData.placeBid(userID, itemID, price);
+        return auctionData.placeBid(userID, itemID, price,token);
     }
 
 }
 
 /*
- * TODO:
- * 3. modify getspec
- * 4. modify newauction
- * 5. modify listauction
- * 6. modify close auction
- * 7. modify bid
+ * TODO: 
+ * 1. fix getspec
  */
