@@ -1,3 +1,5 @@
+import java.nio.charset.StandardCharsets;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.security.KeyPair;
@@ -5,8 +7,10 @@ import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Signature;
 import java.util.HashMap;
 import java.util.Scanner;
+import java.util.UUID;
 
 public class Client {
     static boolean loop = true;
@@ -31,6 +35,7 @@ public class Client {
                 String name = "myserver";
                 Registry registry = LocateRegistry.getRegistry("localhost");
                 Auction server = (Auction) registry.lookup(name);
+
 
                 switch (cmd) {
                     case "exit":
@@ -83,24 +88,38 @@ public class Client {
                         }
                         break;
 
-                        // case "newauction":
-                        //     System.out.println("Enter your user ID:");
-                        //     if (scanner.hasNextInt()) {
-                        //         int userID = scanner.nextInt();
-                        //         scanner.nextLine();  // Consume the newline character
-                        //         AuctionSaleItem newItem = new AuctionSaleItem();
-                        //         System.out.println("Enter your item name:");
-                        //         newItem.name = scanner.nextLine();
-                        //         System.out.println("Enter your item description:");
-                        //         newItem.description = scanner.nextLine();
-                        //         System.out.println("Enter a reserve Price: ");
-                        //         newItem.reservePrice = scanner.nextInt();
-                        //         server.newAuction(userID, newItem);
-                        //     } else {
-                        //         System.out.println("Invalid input. User ID must be an integer.");
-                        //         scanner.nextLine();  // Consume the invalid input
-                        //     }
-                        //     break;
+                        case "newauction":
+                            System.out.println("Enter your user ID:");
+                            
+                            if (scanner.hasNextInt()) {
+                                int userID = scanner.nextInt();
+                                PrivateKey thisclientskey = everyuserprivkey.get(userID);
+                                String randomString = UUID.randomUUID().toString();
+                                ChallengeInfo challengeInfo = server.challenge(userID, randomString);
+                                Signature sig = Signature.getInstance("SHA256withRSA");
+                                System.out.println(thisclientskey);
+                                sig.initSign(thisclientskey);
+                                sig.update(challengeInfo.clientChallenge.getBytes());
+                                byte[] digitalSignature = sig.sign();
+                                // ChallengeInfo challengeInfo = new ChallengeInfo();
+                                System.out.println(challengeInfo.clientChallenge);
+                                
+                                TokenInfo tokenInfo = server.authenticate(userID, digitalSignature);
+
+                                scanner.nextLine();  // Consume the newline character
+                                AuctionSaleItem newItem = new AuctionSaleItem();
+                                System.out.println("Enter your item name:");
+                                newItem.name = scanner.nextLine();
+                                System.out.println("Enter your item description:");
+                                newItem.description = scanner.nextLine();
+                                System.out.println("Enter a reserve Price: ");
+                                newItem.reservePrice = scanner.nextInt();
+                                server.newAuction(userID, newItem,tokenInfo.token);
+                            } else {
+                                System.out.println("Invalid input. User ID must be an integer.");
+                                scanner.nextLine();  // Consume the invalid input
+                            }
+                            break;
                             
                             // case "closeauction":
                             // System.out.println("Enter your USER ID:");
@@ -146,4 +165,6 @@ public class Client {
         public static KeyPair getPair() {
             return pair;
         }
-}
+
+    }
+

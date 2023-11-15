@@ -10,33 +10,21 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.SignatureException;
 import java.util.Base64;
 import javax.crypto.NoSuchPaddingException;
 
 public class Server implements Auction {
     private static int userID;
     private AuctionData auctionData;
-    private KeyPairGenerator generator;
-    private static KeyPair pair;
+    
 
     public Server() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
         this.auctionData = new AuctionData();
         Server.userID = 0;
 
-        try {
-            this.generator = KeyPairGenerator.getInstance("RSA");
-            this.generator.initialize(2048,new SecureRandom());
-            Server.pair = generator.generateKeyPair();
-
-            PrivateKey privkey = pair.getPrivate();
-            PublicKey pubkey = pair.getPublic();
-
-            storePublicKey(pubkey,"../keys/server_public.key");
-
-        } catch (Exception e) {
-            System.out.println(e);
-        }
+        
     }
 
     public static void main(String[] args) {
@@ -53,30 +41,17 @@ public class Server implements Auction {
         
     }
 
-
-
-    // Method to write a public key to a file.
-// Example use: storePublicKey(aPublicKey, ‘../keys/serverKey.pub’)
-    public void storePublicKey(PublicKey publicKey, String filePath) throws Exception {
-    // Convert the public key to a byte array
-        byte[] publicKeyBytes = publicKey.getEncoded();
-    // Encode the public key bytes as Base64
-        String publicKeyBase64 = Base64.getEncoder().encodeToString(publicKeyBytes);
-    // Write the Base64 encoded public key to a file
-        try (FileOutputStream fos = new FileOutputStream(filePath)) {
-        fos.write(publicKeyBase64.getBytes());
-        }
-    }
-
-
-    @Override
-    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException {
-        throw new UnsupportedOperationException("Unimplemented method 'challenge'");
+    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
+        ChallengeInfo cInfo = auctionData.challenge(userID, clientChallenge);
+        System.out.println(cInfo);
+        return cInfo;
     }
 
     @Override
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
-        throw new UnsupportedOperationException("Unimplemented method 'authenticate'");
+        TokenInfo tinfo = auctionData.authenticate(userID, signature);
+        System.out.println(tinfo);
+        return tinfo;
     }
     
     @Override
@@ -115,8 +90,6 @@ public class Server implements Auction {
 
 /*
  * TODO:
- * 1. implement challengeinfo 
- * 2. implement tokeninfo
  * 3. modify getspec
  * 4. modify newauction
  * 5. modify listauction

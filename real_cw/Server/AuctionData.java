@@ -1,9 +1,22 @@
+import java.io.FileOutputStream;
+import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
+import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
+import java.security.Signature;
+import java.security.SignatureException;
+import java.sql.Date;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 class AuctionData {
@@ -13,6 +26,9 @@ class AuctionData {
     private ConcurrentHashMap<Integer, String> userHashMap;
     private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
     private HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
+    private HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
+    private KeyPairGenerator generator;
+    private static KeyPair pair;
 
     public AuctionData() {
         super();
@@ -20,6 +36,32 @@ class AuctionData {
         this.useridanditem = new ConcurrentHashMap<>();
         this.userHashMap = new ConcurrentHashMap<>();
         this.highestBidders = new ConcurrentHashMap<>();
+        try {
+            this.generator = KeyPairGenerator.getInstance("RSA");
+            this.generator.initialize(2048,new SecureRandom());
+            AuctionData.pair = generator.generateKeyPair();
+
+            
+            PublicKey pubkey = pair.getPublic();
+
+            storePublicKey(pubkey,"../keys/server_public.key");
+
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+
+    // Method to write a public key to a file.
+// Example use: storePublicKey(aPublicKey, ‘../keys/serverKey.pub’)
+    public void storePublicKey(PublicKey publicKey, String filePath) throws Exception {
+    // Convert the public key to a byte array
+        byte[] publicKeyBytes = publicKey.getEncoded();
+    // Encode the public key bytes as Base64
+        String publicKeyBase64 = Base64.getEncoder().encodeToString(publicKeyBytes);
+    // Write the Base64 encoded public key to a file
+        try (FileOutputStream fos = new FileOutputStream(filePath)) {
+        fos.write(publicKeyBase64.getBytes());
+        }
     }
 
     public int registerUser(int userID, String email, PublicKey publicKey) {
@@ -95,12 +137,65 @@ class AuctionData {
         }
     }
 
-    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException {
-        throw new UnsupportedOperationException("STFU");
-
+    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
+        try {
+            PrivateKey privkey = pair.getPrivate();
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initSign(privkey);
+            sig.update(clientChallenge.getBytes(StandardCharsets.UTF_8));
+            byte[] digitalSignature = sig.sign();
+            ChallengeInfo challengeInfo = new ChallengeInfo();
+            String randomString = UUID.randomUUID().toString();
+            randomstringhashmap.put(userID, randomString);
+            challengeInfo.response = digitalSignature;
+            challengeInfo.clientChallenge = randomString;
+            System.out.println(randomString);
+        return challengeInfo;
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+            return null;
+        }
     }
 
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
-        throw new UnsupportedOperationException("Unimplemented method 'authenticate'");
+        try {
+            PublicKey cPublicKey = everyuserpubkey.get(userID);
+    
+            // Verify the signature using the client's public key
+            Signature sig = Signature.getInstance("SHA256withRSA");
+            sig.initVerify(cPublicKey);
+            String random = randomstringhashmap.get(userID);
+            sig.update(random.getBytes());
+            boolean isValidSignature = sig.verify(signature);
+    
+            if (isValidSignature) {
+                // Generate a one-time use token
+                String tokenstring = generateToken();
+    
+                // Set the expiration time (e.g., 10 seconds from now)
+                long expirationTimeMillis = System.currentTimeMillis() + 10 * 1000; // 10 seconds
+    
+                // Create TokenInfo object
+                TokenInfo tokenInfo = new TokenInfo();
+                tokenInfo.token = tokenstring;
+                tokenInfo.expiryTime = expirationTimeMillis;
+    
+                // Return the TokenInfo object
+                return tokenInfo;
+            } else {
+                // Signature verification failed
+                System.out.println("Signature verification failed");
+            }
+        } catch (Exception e) {
+            System.out.println("Exception during authentication: " + e.getMessage());
+        }
+    
+        // Return null if authentication fails
+        return null;
+    }
+    
+    // Helper method to generate a random token (you can adjust it based on your requirements)
+    private String generateToken() {
+        return UUID.randomUUID().toString();
     }
 }
