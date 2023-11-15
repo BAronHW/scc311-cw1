@@ -59,7 +59,6 @@ class AuctionData {
     public int registerUser(int userID, String email, PublicKey publicKey) {
         userHashMap.put(userID, email);
         everyuserpubkey.put(userID, publicKey);
-        System.out.println(everyuserpubkey.get(userID));
         return userID;
     }
 
@@ -91,29 +90,35 @@ class AuctionData {
     }
     
     
-
     public AuctionResult closeAuction(int userID, int itemID, String token) {
         boolean booleantoken = validateToken(userID, token);
         if (booleantoken) {
             AuctionItem closeItem = itemMap.get(itemID);
-        if (closeItem != null && useridanditem.containsKey(userID) && useridanditem.get(userID) == itemID) {
-            int highestBidderID = highestBidders.get(itemID);
-            String winemail = userHashMap.get(highestBidderID);
-            AuctionResult result = new AuctionResult();
-            result.winningEmail = winemail;
-            result.winningPrice = closeItem.highestBid;
-            itemMap.remove(itemID);
-            highestBidders.remove(itemID);
-            return result;
-        } else {
-            return null; // or throw an exception indicating permission issue
+            if (closeItem != null && useridanditem.containsKey(userID) && useridanditem.get(userID) == itemID) {
+                Integer highestBidderID = highestBidders.get(itemID);
+                if (highestBidderID != null) {
+                    String winemail = userHashMap.get(highestBidderID);
+                    AuctionResult result = new AuctionResult();
+                    result.winningEmail = winemail;
+                    result.winningPrice = closeItem.highestBid;
+                    itemMap.remove(itemID);
+                    highestBidders.remove(itemID);
+                    return result;
+                } else {
+                    // Handle the case where highestBidderID is null
+                    AuctionResult result = new AuctionResult();
+                    result.winningEmail = "null";
+                    result.winningPrice = closeItem.highestBid;
+                    itemMap.remove(itemID);
+                    return result;
+                }
+            } else {
+                return null; // or throw an exception indicating permission issue
+            }
         }
-        }else{
-            return null;
-        }
-        
-        
+        return null;
     }
+    
 
     public boolean placeBid(int userID, int itemID, int price, String token) {
         boolean booleantoken = validateToken(userID, token);
@@ -168,7 +173,6 @@ class AuctionData {
             randomstringhashmap.put(userID, randomString);
             challengeInfo.response = digitalSignature;
             challengeInfo.clientChallenge = randomString;
-            System.out.println(randomString);
         return challengeInfo;
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -190,7 +194,6 @@ class AuctionData {
                 String tokenstring = generateToken();
                 // Set the expiration time (e.g., 10 seconds from now)
                 long expirationTimeMillis = System.currentTimeMillis() + 10 * 1000; // 10 seconds
-    
                 // Create TokenInfo object
                 TokenInfo tokenInfo = new TokenInfo();
                 tokenInfo.token = tokenstring;
@@ -218,12 +221,17 @@ class AuctionData {
 
     private boolean validateToken(int userID, String token) {
         String tokeString = usertokenmap.get(userID);
-        return tokeString != null && tokeString.equals(token);
+        if (tokeString != null && usertokenmap.remove(userID, tokeString)) {
+            return tokeString.equals(token);
+        } else {
+            return false;
+        }
     }
     
+    
 
-    private void useToken(int userID, String token){
-        // retrieve the token 
+    private void dumpToken(int userID){
+        usertokenmap.remove(userID);
     }
 
     /*

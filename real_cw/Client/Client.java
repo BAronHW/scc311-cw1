@@ -112,7 +112,6 @@ public class Client {
                             PublicKey pubkey = pair.getPublic();
                             int userid = server.register(email, pubkey);
                             everyuserprivkey.put(userid,privkey);
-                            System.out.println(pubkey);
                             
                             System.out.println("This is your userID: " + userid);
                         }
@@ -191,20 +190,16 @@ public class Client {
             ChallengeInfo challengeInfo = server.challenge(userid, randomString);
             Signature sig = Signature.getInstance("SHA256withRSA");
             PublicKey publicKeyss = readKey("../keys/server_public.pub");
-            System.out.println(publicKeyss);
             sig.initVerify(publicKeyss);
             sig.update(randomString.getBytes());
             boolean isValidSignature = sig.verify(challengeInfo.response);
-            System.out.println(isValidSignature);
             if (isValidSignature) {
                 // System.out.println(readKey("../keys/server_public.key"));
                 sig.initSign(thisclientskey);
                 sig.update(challengeInfo.clientChallenge.getBytes());
                 byte[] digitalSignature = sig.sign();
                 // ChallengeInfo challengeInfo = new ChallengeInfo();
-                System.out.println(challengeInfo.clientChallenge);
                 TokenInfo tokenInfo = server.authenticate(userid, digitalSignature);
-                System.out.println(tokenInfo.token);
                 return tokenInfo;
             }else{
                 System.out.println("server is fake");
