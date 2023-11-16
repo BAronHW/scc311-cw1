@@ -83,13 +83,14 @@ public class Client {
                         break;                    
                         case "getspec":
                         // Extract itemID from the command (assuming the format is "getSpec <itemID>")
-                        System.out.println("enter an itemID");
+                        System.out.println("enter an userID");
                         if (scanner.hasNextInt()) {
                             int id = scanner.nextInt();
-                            TokenInfo tok = gTokenInfo(id, server);
                             scanner.nextLine();
-                            int itemid = scanner.nextInt();
-                            AuctionItem auitem = server.getSpec(id,itemid,tok.token);
+                            System.out.println("enter an itemID");
+                            int itemID = scanner.nextInt();
+                            TokenInfo tok = gTokenInfo(id, server);
+                            AuctionItem auitem = server.getSpec(id,itemID,tok.token);
                                 System.out.println("Name: " + auitem.name +
                                         "\nDescription: " + auitem.description +
                                         "\nItemID: " + auitem.itemID +

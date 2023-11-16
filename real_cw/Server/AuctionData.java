@@ -154,10 +154,10 @@ class AuctionData {
         
     }
 
-    public AuctionItem getSpec(int itemID,int UserID, String token) {
-        boolean booleantoken = validateToken(UserID, token);
+    public AuctionItem getSpec(int userID,int itemID, String token) {
+        boolean booleantoken = validateToken(userID, token);
+        AuctionItem item = itemMap.get(itemID);
         if (booleantoken) {
-            AuctionItem item = itemMap.get(itemID);
             if (item != null) {
                 return item;
             } else {
@@ -226,6 +226,7 @@ class AuctionData {
         return UUID.randomUUID().toString();
     }
     private void scheduleTokenExpiration(int userID) {
+        Long time = expiretimemap.get(userID);
         executorService.schedule(() -> {
             // Remove the token logic
             dumpToken(userID);
@@ -234,7 +235,7 @@ class AuctionData {
 
     private void dumpToken(int userID){
         usertokenmap.remove(userID);
-        System.out.println("Token has expired for user" + userID);
+        System.out.println("Token has expired for user " + userID);
     }
 
     private boolean validateToken(int userID, String token) {
