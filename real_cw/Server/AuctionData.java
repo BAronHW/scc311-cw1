@@ -151,7 +151,6 @@ class AuctionData {
         }
         }
         return booleantoken;
-        
     }
 
     public AuctionItem getSpec(int userID,int itemID, String token) {
@@ -227,6 +226,7 @@ class AuctionData {
     }
     private void scheduleTokenExpiration(int userID) {
         Long time = expiretimemap.get(userID);
+        System.out.println(time.toString());
         executorService.schedule(() -> {
             // Remove the token logic
             dumpToken(userID);
