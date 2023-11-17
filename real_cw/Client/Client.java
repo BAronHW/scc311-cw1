@@ -40,7 +40,7 @@ public class Client {
                                     "\ncloseauction"+
                                     "\nbid");
                 String cmd = scanner.nextLine();
-                String name = "myserver";
+                String name = "Auction";
                 Registry registry = LocateRegistry.getRegistry("localhost");
                 Auction server = (Auction) registry.lookup(name);
 
@@ -190,7 +190,7 @@ public class Client {
             String randomString = UUID.randomUUID().toString();
             ChallengeInfo challengeInfo = server.challenge(userid, randomString);
             Signature sig = Signature.getInstance("SHA256withRSA");
-            PublicKey publicKeyss = readKey("../keys/server_public.pub");
+            PublicKey publicKeyss = readKey("../keys/serverKey.pub");
             sig.initVerify(publicKeyss);
             sig.update(randomString.getBytes());
             boolean isValidSignature = sig.verify(challengeInfo.response);
