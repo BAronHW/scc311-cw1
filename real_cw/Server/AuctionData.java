@@ -23,8 +23,7 @@ class AuctionData {
     private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
     private static HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
     private static HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
-    private HashMap<Integer,String> usertokenmap;
-    private HashMap<Integer,Long> expiretimemap = new HashMap<Integer,Long>();
+    private HashMap<Integer,TokenInfo> usertokenmap;
     private KeyPairGenerator generator;
     private static KeyPair pair;
     private static ScheduledExecutorService executorService;
@@ -42,7 +41,7 @@ class AuctionData {
             this.generator.initialize(2048,new SecureRandom());
             AuctionData.pair = generator.generateKeyPair();
             PublicKey pubkey = pair.getPublic();
-            storePublicKey(pubkey,"../keys/server_public.pub");
+            storePublicKey(pubkey,"../keys/serverKey.pub");
 
         } catch (Exception e) {
             System.out.println(e);
@@ -62,13 +61,13 @@ class AuctionData {
         }
     }
 
-    public int registerUser(int userID, String email, PublicKey publicKey) {
+    public synchronized int registerUser(int userID, String email, PublicKey publicKey) {
         userHashMap.put(userID, email);
         everyuserpubkey.put(userID, publicKey);
         return userID;
     }
 
-    public int createNewAuction(int userID, AuctionSaleItem item, String token){
+    public synchronized int createNewAuction(int userID, AuctionSaleItem item, String token){
         boolean booleantoken = validateToken(userID, token);
         if(booleantoken == true){
         id++;
@@ -96,7 +95,7 @@ class AuctionData {
     }
     
     
-    public AuctionResult closeAuction(int userID, int itemID, String token) {
+    public synchronized AuctionResult closeAuction(int userID, int itemID, String token) {
         boolean booleantoken = validateToken(userID, token);
         if (booleantoken) {
             AuctionItem closeItem = itemMap.get(itemID);
@@ -126,7 +125,7 @@ class AuctionData {
     }
     
 
-    public boolean placeBid(int userID, int itemID, int price, String token) {
+    public synchronized boolean placeBid(int userID, int itemID, int price, String token) {
         boolean booleantoken = validateToken(userID, token);
         if (booleantoken) {
             if (!userHashMap.containsKey(userID)) {
@@ -203,9 +202,7 @@ class AuctionData {
                 TokenInfo tokenInfo = new TokenInfo();
                 tokenInfo.token = tokenstring;
                 tokenInfo.expiryTime = expirationTimeMillis;
-                usertokenmap.put(userID, tokenstring);
-                expiretimemap.put(userID, tokenInfo.expiryTime);
-                System.out.println("THIS IS TOKEN"+tokenstring);
+                usertokenmap.put(userID, tokenInfo);
                 // Return the TokenInfo object
                 return tokenInfo;
             } else {
@@ -225,7 +222,9 @@ class AuctionData {
         return UUID.randomUUID().toString();
     }
     private void scheduleTokenExpiration(int userID) {
-        Long time = expiretimemap.get(userID);
+        TokenInfo tok = usertokenmap.get(userID);
+        Long time = tok.expiryTime;
+
         System.out.println(time.toString());
         executorService.schedule(() -> {
             // Remove the token logic
@@ -240,9 +239,10 @@ class AuctionData {
 
     private boolean validateToken(int userID, String token) {
         if (usertokenmap.containsKey(userID)) {
-            String tokeString = usertokenmap.get(userID);
-            if (tokeString.equals(token)&&expiretimemap.containsKey(userID)) {
-                Long expiretime = expiretimemap.get(userID);
+            TokenInfo tokeString = usertokenmap.get(userID);
+            Long expiretime = tokeString.expiryTime;
+            String thistoken = tokeString.token;
+            if (thistoken.equals(token)) {
                 if (System.currentTimeMillis()<expiretime) {
                     scheduleTokenExpiration(userID);
                     return true;
@@ -257,13 +257,3 @@ class AuctionData {
     }
     
 }
-
-
-
-
-
-    /*
-     * after the token is generated the server has to send the token to the client and the server also has to store it with the userid as a key and token as a value
-     * 
-     * make new hashmap of userid and the token that corresponds to the the userid.
-     */

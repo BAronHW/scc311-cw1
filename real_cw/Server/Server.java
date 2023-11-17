@@ -1,17 +1,10 @@
-import java.io.FileOutputStream;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
-import java.security.SignatureException;
-import java.util.Base64;
 import javax.crypto.NoSuchPaddingException;
 
 public class Server implements Auction {
@@ -31,8 +24,8 @@ public class Server implements Auction {
         try {
             Server server = new Server();
             Auction stub = (Auction) UnicastRemoteObject.exportObject(server, 0);
-            Registry registry = LocateRegistry.createRegistry(1099);
-            registry.rebind("myserver", stub);
+            Registry registry = LocateRegistry.getRegistry();
+            registry.rebind("Auction", stub);
             System.out.println("Server ready");
         } catch (Exception e) {
             System.err.println("Exception:");
@@ -76,7 +69,7 @@ public class Server implements Auction {
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
         return auctionData.listItems(userID, token);
     }
-
+    
     @Override
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
         return auctionData.closeAuction(userID, itemID,token);
