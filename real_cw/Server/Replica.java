@@ -7,15 +7,22 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import javax.crypto.NoSuchPaddingException;
 
-public class Replica implements Auction {
+public class Replica implements Auction, Replication {
     private static int userID;
+    private static int replicaID;
     private AuctionData auctionData;
-    private static int primaryReplicaID;
+    private boolean isPrimary;
 
-    public Replica() throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
+    public Replica(int replicaID, boolean isPrimary) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
-        this.auctionData = new AuctionData();
+        this.auctionData = new AuctionData(replicaID);
         Replica.userID = 0;
+        Replica.replicaID = replicaID;
+        this.isPrimary = isPrimary;
+
+        if(isPrimary){
+            //replicate to other replicas.
+        }
     }
 
     public static void main(String[] args) {
@@ -23,15 +30,16 @@ public class Replica implements Auction {
             System.out.println("Java Replica Requires Replica ID");
             System.exit(1);
         }
-        primaryReplicaID = Integer.parseInt(args[0]);
+        replicaID = Integer.parseInt(args[0]);
 
         try {
-            Replica server = new Replica();
+            Replica server = new Replica(replicaID);
             Auction stub = (Auction) UnicastRemoteObject.exportObject(server, 0);
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind("Auction", stub);
+            String replicaname = Integer.toString(replicaID);
+            registry.rebind(replicaname, stub);
             System.out.println("Server ready");
-            System.out.println("This Replica's ID is " + primaryReplicaID);
+            System.out.println("This Replica's ID is " + replicaID);
             System.out.println(server.getPrimaryReplicaID());
         } catch (Exception e) {
             System.err.println("Exception:");
@@ -88,7 +96,12 @@ public class Replica implements Auction {
 
     @Override
     public int getPrimaryReplicaID() throws RemoteException {
-        return primaryReplicaID;
+        return replicaID;
+    }
+
+    @Override
+    public void replicateData(AuctionData data) throws RemoteException {
+        this.auctionData = data;
     }
 
 }

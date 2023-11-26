@@ -28,7 +28,7 @@ class AuctionData {
     private static KeyPair pair;
     private static ScheduledExecutorService executorService;
 
-    public AuctionData() {
+    public AuctionData(int replicaID) {
         super();
         this.itemMap = new ConcurrentHashMap<>();
         this.useridanditem = new ConcurrentHashMap<>();
@@ -47,6 +47,7 @@ class AuctionData {
             System.out.println(e);
         }
     }
+
 
     // Method to write a public key to a file.
 // Example use: storePublicKey(aPublicKey, ‘../keys/serverKey.pub’)

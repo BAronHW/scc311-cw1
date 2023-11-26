@@ -40,7 +40,7 @@ public class Client {
                                     "\ncloseauction"+
                                     "\nbid");
                 String cmd = scanner.nextLine();
-                String name = "Auction";
+                String name = "Frontend";
                 Registry registry = LocateRegistry.getRegistry("localhost");
                 Auction server = (Auction) registry.lookup(name);
 
