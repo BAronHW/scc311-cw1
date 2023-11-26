@@ -255,6 +255,5 @@ class AuctionData {
         return false;
         
     }
-
     
 }
