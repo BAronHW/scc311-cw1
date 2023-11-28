@@ -1,19 +1,14 @@
 import java.rmi.Remote;
 import java.rmi.RemoteException;
-import java.security.InvalidKeyException;
-import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
-import java.security.SignatureException;
 
-public interface Replication extends Remote{
+public interface Auction extends Remote {
     public Integer register(String email, PublicKey pubKey) throws RemoteException;
-    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException, InvalidKeyException, NoSuchAlgorithmException, SignatureException;
+    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException;
     public TokenInfo authenticate(int userID, byte signature[]) throws RemoteException;
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException;
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException;
     public AuctionItem[] listItems(int userID, String token) throws RemoteException;
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException;
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException;
-    public int getPrimaryReplicaID() throws RemoteException;
-    void replicateData(AuctionData data) throws RemoteException;
 }

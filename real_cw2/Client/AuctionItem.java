@@ -3,4 +3,4 @@ public class AuctionItem implements java.io.Serializable {
     String name;
     String description;
     int highestBid;
-}
+    }

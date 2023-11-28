@@ -6,28 +6,27 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
 
 public class Frontend implements Auction{
-    private String primaryReplica;
+    private static String primaryReplica;
+    private static int PrimaryReplicaID;
+    public Frontend() {
+        super();
 
-    public Frontend(String primaryReplica) {
-        this.primaryReplica = primaryReplica;
+        
     }
 
-    
-
     public static void main(String[] args) {
-        if(args.length != 1){
-            System.out.println("Required to specify a primary replica");
-            System.exit(1);
-        }
-        String primaryReplica = args[0];
         try{
-            Frontend frontend = new Frontend(primaryReplica);
+            Frontend frontend = new Frontend();
             Auction stub = (Auction) UnicastRemoteObject.exportObject(frontend, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind("Frontend", stub);
             System.out.println("Frontend Ready");
+            choosePrimary();
         } catch (Exception e) {
             System.err.println("Error starting Frontend " + e.getMessage());
             e.printStackTrace();
@@ -35,11 +34,12 @@ public class Frontend implements Auction{
     }
     
 
-    private Auction getReplica(){
+    private Replication getReplica(){
         try{
             Registry registry = LocateRegistry.getRegistry();
             System.out.println("this is primary replica "+primaryReplica);
-            return (Auction) registry.lookup(primaryReplica);
+            Replication replica = (Replication) registry.lookup(primaryReplica);
+            return replica;
         }catch(Exception e){
             e.printStackTrace();
             return null;
@@ -48,7 +48,7 @@ public class Frontend implements Auction{
 
     @Override
     public Integer register(String email, PublicKey pubKey) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if ((replica != null)) {
             try{
                 return replica.register(email, pubKey);
@@ -62,7 +62,7 @@ public class Frontend implements Auction{
     @Override
     public ChallengeInfo challenge(int userID, String clientChallenge)
             throws RemoteException, InvalidKeyException, NoSuchAlgorithmException, SignatureException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.challenge(userID, clientChallenge);
@@ -76,7 +76,7 @@ public class Frontend implements Auction{
 
     @Override
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.authenticate(userID, signature);
@@ -90,7 +90,7 @@ public class Frontend implements Auction{
 
     @Override
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.getSpec(userID, itemID, token);
@@ -104,7 +104,7 @@ public class Frontend implements Auction{
 
     @Override
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.newAuction(userID, item, token);
@@ -118,7 +118,7 @@ public class Frontend implements Auction{
 
     @Override
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.listItems(userID, token);
@@ -132,7 +132,7 @@ public class Frontend implements Auction{
 
     @Override
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.closeAuction(userID, itemID, token);
@@ -146,23 +146,53 @@ public class Frontend implements Auction{
 
     @Override
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
-        Auction replica = getReplica();
+        Replication replica = getReplica();
         if (replica!=null) {
             try{
                 return replica.bid(userID, itemID, price, token);
             }catch(Exception e){
                 System.err.println("there was a problem with the bid" + e.getMessage());
             }
-            
         }
         return false;
     }
 
     @Override
     public int getPrimaryReplicaID() throws RemoteException {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'getPrimaryReplicaID'");
+        return Frontend.PrimaryReplicaID;
     }
+
+    public static void setPrimaryReplicaID(int primaryReplicaid) {
+        Frontend.PrimaryReplicaID = primaryReplicaid;
+    }
+
+    private static String choosePrimary() throws RemoteException {
+        try{
+            List<String> newlist = new ArrayList<String>();
+            Registry registry = LocateRegistry.getRegistry();
+            String[] reglist = registry.list();
+            for (String string : reglist) {
+                if (string.startsWith("Replica")) {
+                    newlist.add(string);
+                    System.out.println(string);
+                }
+            }
+        int sizeofnewlist = newlist.size();
+        Random random = new Random();
+        int primid = (random.nextInt(sizeofnewlist) + 1);
+        Frontend.setPrimaryReplicaID(primid);
+        System.out.println(primid);
+        return Frontend.primaryReplica = ("Replica " + primid);
+        }catch(Exception e){
+            System.err.print(e);
+        }
+        return null;
+        
+    }
+    
+
+
+
     
     
 }

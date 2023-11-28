@@ -18,36 +18,28 @@ import java.util.concurrent.TimeUnit;
 class AuctionData {
     private static int id = 0;
     private ConcurrentHashMap<Integer, AuctionItem> itemMap;
-    private ConcurrentHashMap<Integer, Integer> useridanditem;
-    private ConcurrentHashMap<Integer, String> userHashMap;
-    private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
-    private static HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
-    private static HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
-    private HashMap<Integer,TokenInfo> usertokenmap;
+    private ConcurrentHashMap<Integer, User> userMap; // Updated to use User class
+    private HashMap<Integer,Long> expiretimemap = new HashMap<Integer,Long>();
     private KeyPairGenerator generator;
-    static KeyPair pair;
+    private static KeyPair pair;
     private static ScheduledExecutorService executorService;
 
-    public AuctionData(int replicaID) {
+    public AuctionData() {
         super();
         this.itemMap = new ConcurrentHashMap<>();
-        this.useridanditem = new ConcurrentHashMap<>();
-        this.userHashMap = new ConcurrentHashMap<>();
-        this.highestBidders = new ConcurrentHashMap<>();
-        this.usertokenmap = new HashMap<>();
+        this.userMap = new ConcurrentHashMap<>();
         executorService = Executors.newScheduledThreadPool(1);
         try {
             this.generator = KeyPairGenerator.getInstance("RSA");
             this.generator.initialize(2048,new SecureRandom());
             AuctionData.pair = generator.generateKeyPair();
             PublicKey pubkey = pair.getPublic();
-            storePublicKey(pubkey,"../keys/serverKey.pub");
+            storePublicKey(pubkey,"../keys/server_public.pub");
 
         } catch (Exception e) {
             System.out.println(e);
         }
     }
-
 
     // Method to write a public key to a file.
 // Example use: storePublicKey(aPublicKey, ‘../keys/serverKey.pub’)
@@ -62,14 +54,18 @@ class AuctionData {
         }
     }
 
-    public synchronized int registerUser(int userID, String email, PublicKey publicKey) {
-        userHashMap.put(userID, email);
-        everyuserpubkey.put(userID, publicKey);
+    public int registerUser(int userID, String email, PublicKey publicKey) {
+        User user = new User();
+        user.email = email;
+        user.userid = userID;
+        user.publicKey = publicKey;
+        userMap.put(userID, user);
         return userID;
     }
 
-    public synchronized int createNewAuction(int userID, AuctionSaleItem item, String token){
-        boolean booleantoken = validateToken(userID, token);
+    public int createNewAuction(int userID, AuctionSaleItem item, String token){
+        User user = userMap.get(userID);
+        boolean booleantoken = validateToken(user.userid, token);
         if(booleantoken == true){
         id++;
         AuctionItem auctionItem = new AuctionItem();
@@ -79,6 +75,7 @@ class AuctionData {
         auctionItem.highestBid = item.reservePrice;
 
         itemMap.put(id, auctionItem);
+        
         useridanditem.put(userID, auctionItem.itemID);
         }
         return id;
@@ -87,16 +84,15 @@ class AuctionData {
     public AuctionItem[] listItems(int userID, String token) {
         boolean booleantoken = validateToken(userID, token);
         AuctionItem[] array = null;  // Initialize array outside the if block
-    
+
         if (booleantoken) {
             array = itemMap.values().toArray(new AuctionItem[0]);
         }
-    
+
         return array;  // Move the return statement outside the if block
     }
     
-    
-    public synchronized AuctionResult closeAuction(int userID, int itemID, String token) {
+    public AuctionResult closeAuction(int userID, int itemID, String token) {
         boolean booleantoken = validateToken(userID, token);
         if (booleantoken) {
             AuctionItem closeItem = itemMap.get(itemID);
@@ -126,7 +122,7 @@ class AuctionData {
     }
     
 
-    public synchronized boolean placeBid(int userID, int itemID, int price, String token) {
+    public boolean placeBid(int userID, int itemID, int price, String token) {
         boolean booleantoken = validateToken(userID, token);
         if (booleantoken) {
             if (!userHashMap.containsKey(userID)) {
@@ -170,14 +166,18 @@ class AuctionData {
         try {
             PrivateKey privkey = pair.getPrivate();
             Signature sig = Signature.getInstance("SHA256withRSA");
+
             sig.initSign(privkey);
             sig.update(clientChallenge.getBytes(StandardCharsets.UTF_8));
+
             byte[] digitalSignature = sig.sign();
             ChallengeInfo challengeInfo = new ChallengeInfo();
             String randomString = UUID.randomUUID().toString();
+
             randomstringhashmap.put(userID, randomString);
             challengeInfo.response = digitalSignature;
             challengeInfo.clientChallenge = randomString;
+
         return challengeInfo;
         } catch (Exception e) {
             System.out.println(e.getMessage());
@@ -203,7 +203,9 @@ class AuctionData {
                 TokenInfo tokenInfo = new TokenInfo();
                 tokenInfo.token = tokenstring;
                 tokenInfo.expiryTime = expirationTimeMillis;
-                usertokenmap.put(userID, tokenInfo);
+                usertokenmap.put(userID, tokenstring);
+                expiretimemap.put(userID, tokenInfo.expiryTime);
+                System.out.println("THIS IS TOKEN"+tokenstring);
                 // Return the TokenInfo object
                 return tokenInfo;
             } else {
@@ -222,10 +224,9 @@ class AuctionData {
     private static String generateToken() {
         return UUID.randomUUID().toString();
     }
+    
     private void scheduleTokenExpiration(int userID) {
-        TokenInfo tok = usertokenmap.get(userID);
-        Long time = tok.expiryTime;
-
+        Long time = expiretimemap.get(userID);
         System.out.println(time.toString());
         executorService.schedule(() -> {
             // Remove the token logic
@@ -240,10 +241,9 @@ class AuctionData {
 
     private boolean validateToken(int userID, String token) {
         if (usertokenmap.containsKey(userID)) {
-            TokenInfo tokeString = usertokenmap.get(userID);
-            Long expiretime = tokeString.expiryTime;
-            String thistoken = tokeString.token;
-            if (thistoken.equals(token)) {
+            String tokeString = usertokenmap.get(userID);
+            if (tokeString.equals(token)&&expiretimemap.containsKey(userID)) {
+                Long expiretime = expiretimemap.get(userID);
                 if (System.currentTimeMillis()<expiretime) {
                     scheduleTokenExpiration(userID);
                     return true;
@@ -256,33 +256,11 @@ class AuctionData {
         return false;
         
     }
-
-    public static HashMap<Integer, PublicKey> getEveryuserpubkey() {
-        return everyuserpubkey;
-    }
-    public ConcurrentHashMap<Integer, Integer> getHighestBidders() {
-        return highestBidders;
-    }
-    public ConcurrentHashMap<Integer, AuctionItem> getItemMap() {
-        return itemMap;
-    }
-    public static KeyPair getPair() {
-        return pair;
-    }
-    public ConcurrentHashMap<Integer, String> getUserHashMap() {
-        return userHashMap;
-    }
-    public ConcurrentHashMap<Integer, Integer> getUseridanditem() {
-        return useridanditem;
-    }
-    public HashMap<Integer, TokenInfo> getUsertokenmap() {
-        return usertokenmap;
-    }
-    public static HashMap<Integer, String> getRandomstringhashmap() {
-        return randomstringhashmap;
-    }
-    public static int getId() {
-        return id;
-    }
     
 }
+
+    /*
+     * after the token is generated the server has to send the token to the client and the server also has to store it with the userid as a key and token as a value
+     * 
+     * make new hashmap of userid and the token that corresponds to the the userid.
+     */
