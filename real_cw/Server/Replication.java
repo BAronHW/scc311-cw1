@@ -15,5 +15,7 @@ public interface Replication extends Remote{
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException;
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException;
     public int getPrimaryReplicaID() throws RemoteException;
-    void replicateData(AuctionData data) throws RemoteException;
+    public void replicateData(AuctionData data) throws RemoteException;
+    public int getReplicaID() throws RemoteException;
+    public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException;
 }

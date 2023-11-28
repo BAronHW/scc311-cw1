@@ -42,20 +42,21 @@ public class Replica implements Replication{
 
         try {
             Replica server = new Replica(replicaID);
-
             Replication stub = (Replication) UnicastRemoteObject.exportObject(server, 0);
             Registry registry = LocateRegistry.getRegistry();
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
-            server.broadcastReplica();
+            server.notifyReplicas();
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
+
             
         } catch (Exception e) {
             System.err.println("Exception:");
             e.printStackTrace();
         }
     }
+
 
     
     public int getReplicaID() throws RemoteException {
@@ -133,8 +134,8 @@ public class Replica implements Replication{
         returncurrState();
     }
 
-    public static String[] listAllReplicas() throws RemoteException {
-        Registry registry = LocateRegistry.getRegistry();
+
+    private String[] listAllReplicas(Registry registry) throws RemoteException {
         String[] list = registry.list();
         ArrayList<String> replicalist = new ArrayList<>();
         for (String string : list) {
@@ -145,10 +146,28 @@ public class Replica implements Replication{
         return replicalist.toArray(new String[0]);
     }
 
+    private void notifyReplicas() {
+        try {
+            Registry registry = LocateRegistry.getRegistry();
+            String[] replicas = listAllReplicas(registry);
+            
+            for (String replicaName : replicas) {
+                if (!replicaName.equals("Replica " + replicaID)) {
+                    Replication replica = (Replication) registry.lookup(replicaName);
+                    replicationMap.put(replica.getReplicaID(), replica);
+                    replica.addToReplicationMap(replicaID, this);
+                    System.out.println(" Added replica " + replica.getReplicaID());
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     private void broadcastReplica(){
         try {
             Registry registry = LocateRegistry.getRegistry();
-            for(int i = 1; i<=listAllReplicas().length; i++){
+            for(int i = 1; i<=listAllReplicas(registry).length; i++){
                 if (i != replicaID) {
                     String replicaname = "Replica " + Integer.toString(i);
                     Replication replica = (Replication) registry.lookup(replicaname);
@@ -158,6 +177,11 @@ public class Replica implements Replication{
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException {
+        replicationMap.put(replicaID, replica);
+        System.out.println("new replica in the room Added replica " + replica.getReplicaID());
     }
 
 }
