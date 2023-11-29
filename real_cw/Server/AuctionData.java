@@ -284,5 +284,8 @@ class AuctionData {
     public static int getId() {
         return id;
     }
+    public KeyPairGenerator getGenerator() {
+        return generator;
+    }
     
 }

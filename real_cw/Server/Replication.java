@@ -18,4 +18,5 @@ public interface Replication extends Remote{
     public void replicateData(AuctionData data) throws RemoteException;
     public int getReplicaID() throws RemoteException;
     public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException;
+    public void setCurrentstate(ReplicaState currentstate) throws RemoteException;
 }

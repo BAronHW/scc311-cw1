@@ -1,9 +1,10 @@
-import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.util.ArrayList;
@@ -47,10 +48,16 @@ public class Replica implements Replication{
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
             server.notifyReplicas();
+            String[] replicas = server.listAllReplicas(registry);
+            ReplicaState state = server.returncurrState();
+            for (String replicaName : replicas) {
+                if (!replicaName.equals("Replica " + replicaID)) {
+                    Replication replica = (Replication) registry.lookup(replicaName);
+                    replica.setCurrentstate(state);
+                }
+            }
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
-
-            
         } catch (Exception e) {
             System.err.println("Exception:");
             e.printStackTrace();
@@ -64,41 +71,53 @@ public class Replica implements Replication{
     }
 
     public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
+        setPrimary(true);
         ChallengeInfo cInfo = auctionData.challenge(userID, clientChallenge);
+        ReplicaState updatedstate = returncurrState();
         System.out.println(cInfo);
         return cInfo;
     }
 
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
+        setPrimary(true);
         TokenInfo tinfo = auctionData.authenticate(userID, signature);
+        ReplicaState updatedstate = returncurrState();
         System.out.println(tinfo);
         return tinfo;
     }
     
     public Integer register(String email, PublicKey pubKey) throws RemoteException {
+        setPrimary(true);
         userID++;
         System.out.println(pubKey);
-        return auctionData.registerUser(userID, email, pubKey);
+        ReplicaState updatedstate = returncurrState();
+        int regid = auctionData.registerUser(userID, email, pubKey);
+        return regid;
     }
 
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
+        setPrimary(true);
         return auctionData.getSpec(itemID,userID,token);
     }
 
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
+        setPrimary(true);
         int id = auctionData.createNewAuction(userID, item, token);
         return id;
     }
 
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
+        setPrimary(true);
         return auctionData.listItems(userID, token);
     }
     
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
+        setPrimary(true);
         return auctionData.closeAuction(userID, itemID,token);
     }
 
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
+        setPrimary(true);
         return auctionData.placeBid(userID, itemID, price,token);
     }
 
@@ -114,24 +133,38 @@ public class Replica implements Replication{
         return this.isPrimary;
     }
 
+    public void setPrimary(boolean isPrimary) {
+        this.isPrimary = isPrimary;
+    }
+
     public Map<Integer, Replication> getReplicationMap() {
         return replicationMap;
     }
 
+    //everytime the primary state changes get the replicas from the primary replica hashmap and update their state
+    //to return the primary replicas current state to the secondary replicas
     public ReplicaState returncurrState(){
-        auctionData.getHighestBidders();
-        ReplicaState currentstate = new ReplicaState(null, null, null, null, null, null, null, null, null, userID);
+        ConcurrentHashMap<Integer, AuctionItem> itemMap = auctionData.getItemMap();
+        ConcurrentHashMap<Integer, Integer> useridanditem = auctionData.getUseridanditem();
+        ConcurrentHashMap<Integer, String> userHashMap = auctionData.getUserHashMap();
+        ConcurrentHashMap<Integer, Integer> highestBidders = auctionData.getHighestBidders();
+        HashMap<Integer, PublicKey> everyuserpubkey = auctionData.getEveryuserpubkey();
+        HashMap<Integer, String> randomstringhashmap = auctionData.getRandomstringhashmap();
+        HashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
+        KeyPair pair = auctionData.getPair();
+        int userID = getUserID();
+
+        ReplicaState currentstate = new ReplicaState(
+            itemMap, useridanditem, userHashMap, highestBidders,
+            everyuserpubkey, randomstringhashmap, usertokenmap
+            , pair, userID
+        );
         return currentstate;
     }
 
-    // public ConcurrentHashMap<Integer, Integer> highestBid(){
-    //     System.out.println(auctionData.getHighestBidders());
-    //     return auctionData.getHighestBidders();
-    // }
-
     public void getState(){
         // for the secondary replicas so that they can set take apart the currentstate variable and put it into their own states
-        returncurrState();
+        ReplicaState currentstate = returncurrState();
     }
 
 
@@ -164,24 +197,20 @@ public class Replica implements Replication{
         }
     }
 
-    private void broadcastReplica(){
-        try {
-            Registry registry = LocateRegistry.getRegistry();
-            for(int i = 1; i<=listAllReplicas(registry).length; i++){
-                if (i != replicaID) {
-                    String replicaname = "Replica " + Integer.toString(i);
-                    Replication replica = (Replication) registry.lookup(replicaname);
-                    replicationMap.put(i, replica);
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
     public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException {
         replicationMap.put(replicaID, replica);
         System.out.println("new replica in the room Added replica " + replica.getReplicaID());
+    }
+
+    public AuctionData getAuctionData() {
+        return auctionData;
+    }
+
+    public static int getUserID() {
+        return userID;
+    }
+    public void setCurrentstate(ReplicaState currentstate) {
+        this.currentstate = currentstate;
     }
 
 }

@@ -1,10 +1,12 @@
-    import java.security.KeyPair;
+    import java.io.Serializable;
+import java.security.KeyPair;
     import java.security.KeyPairGenerator;
     import java.security.PublicKey;
     import java.util.HashMap;
     import java.util.concurrent.ConcurrentHashMap;
 
-    public class ReplicaState {
+    public class ReplicaState implements Serializable{
+
         private ConcurrentHashMap<Integer, AuctionItem> itemMap;
         private ConcurrentHashMap<Integer, Integer> useridanditem;
         private ConcurrentHashMap<Integer, String> userHashMap;
@@ -12,11 +14,10 @@
         private HashMap<Integer,PublicKey> everyuserpubkey;
         private HashMap<Integer,String> randomstringhashmap;
         private HashMap<Integer,TokenInfo> usertokenmap;
-        private KeyPairGenerator generator;
         private KeyPair pair;
         private int userID;
 
-        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, HashMap<Integer,TokenInfo> usertokenmap,KeyPairGenerator generator,KeyPair pair, int userID){
+        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, HashMap<Integer,TokenInfo> usertokenmap,KeyPair pair, int userID){
             this.itemMap = new ConcurrentHashMap<Integer, AuctionItem>();
             this.useridanditem = new ConcurrentHashMap<Integer, Integer>();
             this.userHashMap = new ConcurrentHashMap<Integer,String>();
@@ -24,7 +25,6 @@
             this.usertokenmap = new HashMap<Integer,TokenInfo>();
             this.everyuserpubkey = new HashMap<Integer,PublicKey>();
             this.randomstringhashmap = new HashMap<Integer, String>();
-            this.generator = generator;
             this.pair = pair;
             this.userID = userID;
         }
@@ -70,12 +70,6 @@
         }
         public HashMap<Integer, TokenInfo> getUsertokenmap() {
             return usertokenmap;
-        }
-        public void setGenerator(KeyPairGenerator generator) {
-            this.generator = generator;
-        }
-        public KeyPairGenerator getGenerator() {
-            return generator;
         }
         public void setPair(KeyPair pair) {
             this.pair = pair;
