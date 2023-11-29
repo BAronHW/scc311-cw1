@@ -99,7 +99,12 @@ public class Replica implements Replication{
         setPrimary(true);
         for (Replication replica : getReplicationMap().values()) {
             ReplicaState updatedState = returncurrState(); // Use correct method name
-            replica.getState(replica);
+            try {
+                replica.getState(replica);
+            } catch (NotBoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         int id = auctionData.createNewAuction(userID, item, token);
         return id;
@@ -162,7 +167,7 @@ public class Replica implements Replication{
     }
 
     
-    public void getState(Replica server) throws RemoteException, NotBoundException{
+    public void getState(Replication server) throws RemoteException, NotBoundException{
         // for the secondary replicas so that they can set take apart the currentstate variable and put it into their own states
         Registry registry = LocateRegistry.getRegistry();
         ReplicaState state = server.returncurrState();
@@ -172,7 +177,7 @@ public class Replica implements Replication{
                     ReplicaState gotstate = rep.getCurrentstate();
                     ConcurrentHashMap<Integer, String> map = gotstate.getUserHashMap();
                     for (String val : map.values()) {
-                        System.out.println(val);
+                        System.out.println(val.toString());
                     }
             }
     }
