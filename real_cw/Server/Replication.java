@@ -1,3 +1,4 @@
+import java.rmi.NotBoundException;
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 import java.security.InvalidKeyException;
@@ -10,7 +11,7 @@ public interface Replication extends Remote{
     public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException, InvalidKeyException, NoSuchAlgorithmException, SignatureException;
     public TokenInfo authenticate(int userID, byte signature[]) throws RemoteException;
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException;
-    public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException;
+    public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException, NotBoundException;
     public AuctionItem[] listItems(int userID, String token) throws RemoteException;
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException;
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException;
@@ -19,4 +20,6 @@ public interface Replication extends Remote{
     public int getReplicaID() throws RemoteException;
     public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException;
     public void setCurrentstate(ReplicaState currentstate) throws RemoteException;
+    public ReplicaState getCurrentstate() throws RemoteException;
+    public void getState(Replica server) throws RemoteException, NotBoundException;
 }

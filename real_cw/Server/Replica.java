@@ -1,3 +1,4 @@
+import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -48,11 +49,7 @@ public class Replica implements Replication{
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
             server.notifyReplicas();
-            ReplicaState state = server.returncurrState();
-            for (Replication replica : server.getReplicationMap().values()) {
-                Replication rep = (Replication) registry.lookup("Replica "+replica.getReplicaID());
-                    rep.setCurrentstate(state);
-            }
+            server.getState(server);
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
         } catch (Exception e) {
@@ -93,12 +90,17 @@ public class Replica implements Replication{
     }
 
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
+        
         setPrimary(true);
         return auctionData.getSpec(itemID,userID,token);
     }
 
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
         setPrimary(true);
+        Map<Integer, Replication> map = getReplicationMap();
+        for (Replication val : map.values()) {
+            // val.getState(null);
+        }
         int id = auctionData.createNewAuction(userID, item, token);
         return id;
     }
@@ -159,9 +161,20 @@ public class Replica implements Replication{
         return currentstate;
     }
 
-    public void getState(){
+    
+    public void getState(Replica server) throws RemoteException, NotBoundException{
         // for the secondary replicas so that they can set take apart the currentstate variable and put it into their own states
-        ReplicaState currentstate = returncurrState();
+        Registry registry = LocateRegistry.getRegistry();
+        ReplicaState state = server.returncurrState();
+            for (Replication replica : server.getReplicationMap().values()) {
+                Replication rep = (Replication) registry.lookup("Replica "+replica.getReplicaID());
+                    rep.setCurrentstate(state);
+                    ReplicaState gotstate = rep.getCurrentstate();
+                    ConcurrentHashMap<Integer, String> map = gotstate.getUserHashMap();
+                    for (String val : map.values()) {
+                        System.out.println(val);
+                    }
+            }
     }
 
 
@@ -209,6 +222,15 @@ public class Replica implements Replication{
     public void setCurrentstate(ReplicaState currentstate) {
         this.currentstate = currentstate;
     }
+    public ReplicaState getCurrentstate() {
+        return currentstate;
+    }
+
+
+    
+
+    
+    
 
 }
 
