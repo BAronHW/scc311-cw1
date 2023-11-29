@@ -5,6 +5,7 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.Map;
 
 public interface Replication extends Remote{
     public Integer register(String email, PublicKey pubKey) throws RemoteException;
@@ -21,5 +22,7 @@ public interface Replication extends Remote{
     public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException;
     public void setCurrentstate(ReplicaState currentstate) throws RemoteException;
     public ReplicaState getCurrentstate() throws RemoteException;
-    public void getState(Replica server) throws RemoteException, NotBoundException;
+    public void getState(Replica replica) throws RemoteException, NotBoundException;
+    public ReplicaState returncurrState() throws RemoteException;
+    public Map<Integer, Replication> getReplicationMap() throws RemoteException;
 }

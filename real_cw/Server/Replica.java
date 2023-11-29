@@ -97,9 +97,9 @@ public class Replica implements Replication{
 
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
         setPrimary(true);
-        Map<Integer, Replication> map = getReplicationMap();
-        for (Replication val : map.values()) {
-            // val.getState(null);
+        for (Replication replica : getReplicationMap().values()) {
+            ReplicaState updatedState = returncurrState(); // Use correct method name
+            replica.getState(replica);
         }
         int id = auctionData.createNewAuction(userID, item, token);
         return id;
@@ -225,13 +225,9 @@ public class Replica implements Replication{
     public ReplicaState getCurrentstate() {
         return currentstate;
     }
-
-
-    
-
     
     
-
+    
 }
 
 /*
