@@ -48,13 +48,10 @@ public class Replica implements Replication{
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
             server.notifyReplicas();
-            String[] replicas = server.listAllReplicas(registry);
             ReplicaState state = server.returncurrState();
-            for (String replicaName : replicas) {
-                if (!replicaName.equals("Replica " + replicaID)) {
-                    Replication replica = (Replication) registry.lookup(replicaName);
-                    replica.setCurrentstate(state);
-                }
+            for (Replication replica : server.getReplicationMap().values()) {
+                Replication rep = (Replication) registry.lookup("Replica "+replica.getReplicaID());
+                    rep.setCurrentstate(state);
             }
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
