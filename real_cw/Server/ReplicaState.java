@@ -13,20 +13,21 @@ import java.security.KeyPair;
         private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
         private HashMap<Integer,PublicKey> everyuserpubkey;
         private HashMap<Integer,String> randomstringhashmap;
-        private HashMap<Integer,TokenInfo> usertokenmap;
+        private ConcurrentHashMap<Integer,TokenInfo> usertokenmap;
         private KeyPair pair;
         private int userID;
 
-        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, HashMap<Integer,TokenInfo> usertokenmap,KeyPair pair, int userID){
+        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, ConcurrentHashMap<Integer,TokenInfo> usertokenmap,KeyPair pair, int userID){
             this.itemMap = new ConcurrentHashMap<Integer, AuctionItem>();
             this.useridanditem = new ConcurrentHashMap<Integer, Integer>();
             this.userHashMap = new ConcurrentHashMap<Integer,String>();
             this.highestBidders = new ConcurrentHashMap<Integer,Integer>();
-            this.usertokenmap = new HashMap<Integer,TokenInfo>();
+            this.usertokenmap = new ConcurrentHashMap<Integer,TokenInfo>();
             this.everyuserpubkey = new HashMap<Integer,PublicKey>();
             this.randomstringhashmap = new HashMap<Integer, String>();
             this.pair = pair;
             this.userID = userID;
+            // this.auctionData = auctionData;
         }
 
         public void setItemMap(ConcurrentHashMap<Integer, AuctionItem> itemMap) {
@@ -65,10 +66,10 @@ import java.security.KeyPair;
         public HashMap<Integer, String> getRandomstringhashmap() {
             return randomstringhashmap;
         }
-        public void setUsertokenmap(HashMap<Integer, TokenInfo> usertokenmap) {
+        public void setUsertokenmap(ConcurrentHashMap<Integer, TokenInfo> usertokenmap) {
             this.usertokenmap = usertokenmap;
         }
-        public HashMap<Integer, TokenInfo> getUsertokenmap() {
+        public ConcurrentHashMap<Integer, TokenInfo> getUsertokenmap() {
             return usertokenmap;
         }
         public void setPair(KeyPair pair) {

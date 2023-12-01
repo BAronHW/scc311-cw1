@@ -19,7 +19,6 @@ public class Replica implements Replication{
     private static int userID;
     public int replicaID;
     private AuctionData auctionData;
-    private boolean isPrimary;
     ReplicaState currentstate;
     private Map<Integer, Replication> replicationMap; //store the existence of other replicas
     
@@ -28,7 +27,6 @@ public class Replica implements Replication{
         this.auctionData = new AuctionData(replicaID);
         Replica.userID = 0;
         this.replicaID = replicaID;
-        this.isPrimary = isPrimary;
         this.replicationMap = new HashMap<Integer, Replication>();
         // Replication replicastub = (Replication) UnicastRemoteObject.exportObject(this, 0);
         // Registry registry = LocateRegistry.getRegistry();
@@ -65,7 +63,6 @@ public class Replica implements Replication{
     }
 
     public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
-        setPrimary(true);
         ChallengeInfo cInfo = auctionData.challenge(userID, clientChallenge);
         // for (Replication replica : getReplicationMap().values()) {
         //     try {
@@ -80,7 +77,6 @@ public class Replica implements Replication{
     }
 
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
-        setPrimary(true);
         TokenInfo tinfo = auctionData.authenticate(userID, signature);
         // for (Replication replica : getReplicationMap().values()) {
         //     try {
@@ -95,7 +91,6 @@ public class Replica implements Replication{
     }
     
     public Integer register(String email, PublicKey pubKey) throws RemoteException {
-        setPrimary(true);
         userID++;
         System.out.println(pubKey);
         for (Replication replica : getReplicationMap().values()) {
@@ -112,53 +107,51 @@ public class Replica implements Replication{
     }
 
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
-        setPrimary(true);
         return auctionData.getSpec(itemID,userID,token);
     }
 
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
-        setPrimary(true);
-        // for (Replication replica : getReplicationMap().values()) {
-        //     try {
-        //         replica.getState(replica);
-        //     } catch (NotBoundException e) {
-        //         // TODO Auto-generated catch block
-        //         e.printStackTrace();
-        //     }
-        // }
+        try {
+            for (Replication replica : getReplicationMap().values()) {
+                System.out.println("Your replica id \n"+replica.getReplicaID());
+                
+        }
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
         int id = auctionData.createNewAuction(userID, item, token);
         return id;
     }
 
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
-        setPrimary(true);
         return auctionData.listItems(userID, token);
     }
     
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
-        setPrimary(true);
+        try {
+            for (Replication replica : getReplicationMap().values()) {
+                System.out.println("Your replica id \n"+replica.getReplicaID());
+                
+        }
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
         AuctionResult ac = auctionData.closeAuction(userID, itemID,token);
-        // for (Replication replica : getReplicationMap().values()) {
-        //     try {
-        //         replica.getState(replica);
-        //     } catch (NotBoundException e) {
-        //         // TODO Auto-generated catch block
-        //         e.printStackTrace();
-        //     }
-        // }
         return ac;
     }
 
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
-        setPrimary(true);
-        // for (Replication replica : getReplicationMap().values()) {
-        //     try {
-        //         replica.getState(replica);
-        //     } catch (NotBoundException e) {
-        //         // TODO Auto-generated catch block
-        //         e.printStackTrace();
-        //     }
-        // }
+        try {
+            for (Replication replica : getReplicationMap().values()) {
+                System.out.println("Your replica id \n"+replica.getReplicaID());
+                
+        }
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
         boolean bool = auctionData.placeBid(userID, itemID, price,token);
         return bool;
     }
@@ -171,13 +164,6 @@ public class Replica implements Replication{
         this.auctionData = data;
     }
 
-    public boolean getisPrimary(){
-        return this.isPrimary;
-    }
-
-    public void setPrimary(boolean isPrimary) {
-        this.isPrimary = isPrimary;
-    }
 
     public Map<Integer, Replication> getReplicationMap() {
         return replicationMap;
@@ -192,7 +178,7 @@ public class Replica implements Replication{
         ConcurrentHashMap<Integer, Integer> highestBidders = auctionData.getHighestBidders();
         HashMap<Integer, PublicKey> everyuserpubkey = auctionData.getEveryuserpubkey();
         HashMap<Integer, String> randomstringhashmap = auctionData.getRandomstringhashmap();
-        HashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
+        ConcurrentHashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
         KeyPair pair = auctionData.getPair();
         int userID = getUserID();
 

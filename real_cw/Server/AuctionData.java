@@ -21,11 +21,11 @@ class AuctionData {
     private ConcurrentHashMap<Integer, Integer> useridanditem;
     private ConcurrentHashMap<Integer, String> userHashMap;
     private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
-    private static HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
-    private static HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
-    private HashMap<Integer,TokenInfo> usertokenmap;
+    private HashMap<Integer,PublicKey> everyuserpubkey = new HashMap<Integer, PublicKey>();
+    private HashMap<Integer,String> randomstringhashmap = new HashMap<Integer, String>();
+    private ConcurrentHashMap<Integer,TokenInfo> usertokenmap;
     private KeyPairGenerator generator;
-    static KeyPair pair;
+    private KeyPair pair;
     private static ScheduledExecutorService executorService;
 
     public AuctionData(int replicaID) {
@@ -34,12 +34,12 @@ class AuctionData {
         this.useridanditem = new ConcurrentHashMap<>();
         this.userHashMap = new ConcurrentHashMap<>();
         this.highestBidders = new ConcurrentHashMap<>();
-        this.usertokenmap = new HashMap<>();
+        this.usertokenmap = new ConcurrentHashMap<>();
         executorService = Executors.newScheduledThreadPool(1);
         try {
             this.generator = KeyPairGenerator.getInstance("RSA");
             this.generator.initialize(2048,new SecureRandom());
-            AuctionData.pair = generator.generateKeyPair();
+            AuctionData.this.pair = generator.generateKeyPair();
             PublicKey pubkey = pair.getPublic();
             storePublicKey(pubkey,"../keys/serverKey.pub");
 
@@ -166,7 +166,7 @@ class AuctionData {
         return null;
     }
 
-    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
+    public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException {
         try {
             PrivateKey privkey = pair.getPrivate();
             Signature sig = Signature.getInstance("SHA256withRSA");
@@ -178,13 +178,15 @@ class AuctionData {
             randomstringhashmap.put(userID, randomString);
             challengeInfo.response = digitalSignature;
             challengeInfo.clientChallenge = randomString;
-        return challengeInfo;
+            return challengeInfo;
         } catch (Exception e) {
             System.out.println(e.getMessage());
             return null;
         }
     }
-
+    
+    // ...
+    
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
         try {
             PublicKey cPublicKey = everyuserpubkey.get(userID);
@@ -196,12 +198,12 @@ class AuctionData {
             boolean isValidSignature = sig.verify(signature);
             if (isValidSignature) {
                 // Generate a one-time use token
-                String tokenstring = generateToken();
+                String tokenString = generateToken();
                 // Set the expiration time (e.g., 10 seconds from now)
                 long expirationTimeMillis = System.currentTimeMillis() + 10 * 1000; // 10 seconds
                 // Create TokenInfo object
                 TokenInfo tokenInfo = new TokenInfo();
-                tokenInfo.token = tokenstring;
+                tokenInfo.token = tokenString;
                 tokenInfo.expiryTime = expirationTimeMillis;
                 usertokenmap.put(userID, tokenInfo);
                 // Return the TokenInfo object
@@ -217,6 +219,7 @@ class AuctionData {
         // Return null if authentication fails
         return null;
     }
+    
     
     // Helper method to generate a random token (you can adjust it based on your requirements)
     private static String generateToken() {
@@ -239,7 +242,8 @@ class AuctionData {
     }
 
     private boolean validateToken(int userID, String token) {
-        if (usertokenmap.containsKey(userID)) {
+        try {
+            if (usertokenmap.containsKey(userID)) {
             TokenInfo tokeString = usertokenmap.get(userID);
             Long expiretime = tokeString.expiryTime;
             String thistoken = tokeString.token;
@@ -253,11 +257,16 @@ class AuctionData {
             }
             }
         }
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
+        
         return false;
         
     }
 
-    public static HashMap<Integer, PublicKey> getEveryuserpubkey() {
+    public HashMap<Integer, PublicKey> getEveryuserpubkey() {
         return everyuserpubkey;
     }
     public ConcurrentHashMap<Integer, Integer> getHighestBidders() {
@@ -266,7 +275,7 @@ class AuctionData {
     public ConcurrentHashMap<Integer, AuctionItem> getItemMap() {
         return itemMap;
     }
-    public static KeyPair getPair() {
+    public KeyPair getPair() {
         return pair;
     }
     public ConcurrentHashMap<Integer, String> getUserHashMap() {
@@ -275,10 +284,10 @@ class AuctionData {
     public ConcurrentHashMap<Integer, Integer> getUseridanditem() {
         return useridanditem;
     }
-    public HashMap<Integer, TokenInfo> getUsertokenmap() {
+    public ConcurrentHashMap<Integer, TokenInfo> getUsertokenmap() {
         return usertokenmap;
     }
-    public static HashMap<Integer, String> getRandomstringhashmap() {
+    public HashMap<Integer, String> getRandomstringhashmap() {
         return randomstringhashmap;
     }
     public static int getId() {

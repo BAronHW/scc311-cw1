@@ -120,8 +120,9 @@ public class Client {
 
                         case "newauction":
                             System.out.println("Enter your user ID:");
-                            
-                            if (scanner.hasNextInt()) {
+
+                            try {
+                                if (scanner.hasNextInt()) {
                                 int userID = scanner.nextInt();
                                 TokenInfo newtoken = gTokenInfo(userID, server);
                                 scanner.nextLine();  // Consume the newline character
@@ -137,6 +138,12 @@ public class Client {
                                 System.out.println("Invalid input. User ID must be an integer.");
                                 scanner.nextLine();  // Consume the invalid input
                             }
+                            } catch (Exception e) {
+                                // TODO: handle exception
+                                e.printStackTrace();
+                            }
+                            
+                            
                             break;
                             
                             case "closeauction":
