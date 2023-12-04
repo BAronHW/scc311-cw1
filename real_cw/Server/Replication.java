@@ -26,4 +26,5 @@ public interface Replication extends Remote{
     public Map<Integer, Replication> getReplicationMap() throws RemoteException;
     public void setIsprimary(boolean isprimary) throws RemoteException;
     public boolean getisprimary() throws RemoteException;
+    public boolean ping() throws RemoteException;
 }

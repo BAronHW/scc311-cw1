@@ -18,7 +18,7 @@ public class Frontend implements Auction{
 
         
     }
-    
+
     public static void main(String[] args) {
         try {
             Frontend frontend = new Frontend();
@@ -50,7 +50,7 @@ public class Frontend implements Auction{
 
     @Override
 public Integer register(String email, PublicKey pubKey) throws RemoteException {
-    Replication replica = getReplica();
+    Replication replica = getAliveReplica();
     if (replica != null) {
         try {
             Integer regid = replica.register(email, pubKey);
@@ -71,7 +71,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
     @Override
     public ChallengeInfo challenge(int userID, String clientChallenge)
             throws RemoteException, InvalidKeyException, NoSuchAlgorithmException, SignatureException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.challenge(userID, clientChallenge);
@@ -85,7 +85,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
 
     @Override
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.authenticate(userID, signature);
@@ -99,7 +99,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
 
     @Override
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.getSpec(userID, itemID, token);
@@ -113,7 +113,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
 
     @Override
     public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.newAuction(userID, item, token);
@@ -127,7 +127,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
 
     @Override
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.listItems(userID, token);
@@ -141,7 +141,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
 
     @Override
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.closeAuction(userID, itemID, token);
@@ -155,7 +155,7 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
 
     @Override
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
-        Replication replica = getReplica();
+        Replication replica = getAliveReplica();
         if (replica!=null) {
             try{
                 return replica.bid(userID, itemID, price, token);
@@ -206,7 +206,28 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
         }
         return null;
     }
+
     
+    private boolean pingReplica(Replication replica) {
+        try {
+            return replica.ping();
+        } catch (RemoteException e) {
+            // Replica is not reachable, consider it as not alive
+            return false;
+        }
+    }
+
+    private Replication getAliveReplica() throws RemoteException{
+        Replication replica = getReplica();
+        if (replica!=null && pingReplica(replica)) {
+            return replica;
+        }else{
+            Frontend.primaryReplica = choosePrimary();
+            Replication anotherReplica = getReplica();
+            return anotherReplica;
+        }
+        
+    }
     
 
 

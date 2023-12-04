@@ -102,16 +102,16 @@ public class Replica implements Replication{
     public Integer register(String email, PublicKey pubKey) throws RemoteException {
         userID++;
         System.out.println(pubKey);
-        for (Replication replica : getReplicationMap().values()) {
+        int regid = auctionData.registerUser(userID, email, pubKey);
+        for (Replication otherreplica : getReplicationMap().values()) {
             try {
-                replica.getState(this.replicaID);
+
+                otherreplica.getState(this.replicaID);
             } catch (NotBoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
-        int regid = auctionData.registerUser(userID, email, pubKey);
-        
         return regid;
     }
 
@@ -149,15 +149,15 @@ public class Replica implements Replication{
     }
     
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
-        for (Replication replica : getReplicationMap().values()) {
+        AuctionResult ac = auctionData.closeAuction(userID, itemID,token);
+        for (Replication otherreplica : getReplicationMap().values()) {
             try {
-                replica.getState(this.replicaID);
+                otherreplica.getState(this.replicaID);
             } catch (NotBoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
-        AuctionResult ac = auctionData.closeAuction(userID, itemID,token);
         return ac;
     }
 
@@ -182,7 +182,6 @@ public class Replica implements Replication{
         this.auctionData = data;
     }
 
-
     public Map<Integer, Replication> getReplicationMap() {
         return replicationMap;
     }
@@ -201,7 +200,6 @@ public class Replica implements Replication{
         int userID = getUserID();
         PrivateKey privateKey = pair.getPrivate();
         PublicKey publicKey = pair.getPublic();
-
         System.out.println("returncurrstate's"+itemMap);
 
         ReplicaState currentstate = new ReplicaState(
@@ -216,7 +214,6 @@ public class Replica implements Replication{
     public void getState(int myreplicaid) throws RemoteException, NotBoundException {
         // for the secondary replicas so that they can set take apart the currentstate variable and put it into their own states
         Registry registry = LocateRegistry.getRegistry();
-    
         // Get the current state from the primary replica
         Replication replica = (Replication) registry.lookup("Replica "+myreplicaid);
         ReplicaState state = replica.returncurrState();
@@ -227,11 +224,6 @@ public class Replica implements Replication{
         auctionData.setUseridanditem(state.getUseridanditem());
         auctionData.setUserHashMap(state.getUserHashMap());
         auctionData.setId(state.getId());
-        System.out.println(auctionData.getItemMap().size());
-        System.out.println(auctionData.getHighestBidders().size());
-        System.out.println(auctionData.getUseridanditem().size());
-        System.out.println(auctionData.getUserHashMap().size());
-        System.out.println(auctionData.getId());
         }
     
     
@@ -293,6 +285,11 @@ public class Replica implements Replication{
     }
     public Map<Integer, Replication> getreplicationmap(){
         return this.replicationMap;
+    }
+
+    @Override
+    public boolean ping() throws RemoteException {
+        return true;
     }
     
     
