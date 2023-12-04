@@ -21,7 +21,7 @@ public interface Replication extends Remote{
     public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException;
     public void setCurrentstate(ReplicaState currentstate) throws RemoteException;
     public ReplicaState getCurrentstate() throws RemoteException;
-    public void getState(Replication replica) throws RemoteException, NotBoundException;
+    public void getState(int replica) throws RemoteException, NotBoundException;
     public ReplicaState returncurrState() throws RemoteException;
     public Map<Integer, Replication> getReplicationMap() throws RemoteException;
     public void setIsprimary(boolean isprimary) throws RemoteException;

@@ -1,39 +1,50 @@
-    import java.io.Serializable;
+import java.io.Serializable;
 import java.security.KeyPair;
-    import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-    import java.util.HashMap;
-    import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
-    public class ReplicaState implements Serializable{
+public class ReplicaState implements Serializable {
+    private ConcurrentHashMap<Integer, AuctionItem> itemMap;
+    private ConcurrentHashMap<Integer, Integer> useridanditem;
+    private ConcurrentHashMap<Integer, String> userHashMap;
+    private ConcurrentHashMap<Integer, Integer> highestBidders;
+    private HashMap<Integer, PublicKey> everyuserpubkey;
+    private HashMap<Integer, String> randomstringhashmap;
+    private ConcurrentHashMap<Integer, TokenInfo> usertokenmap;
+    private KeyPair pair;
+    private int userID;
+    private PublicKey publicKey;
+    private PrivateKey privateKey;
 
-        private ConcurrentHashMap<Integer, AuctionItem> itemMap;
-        private ConcurrentHashMap<Integer, Integer> useridanditem;
-        private ConcurrentHashMap<Integer, String> userHashMap;
-        private ConcurrentHashMap<Integer, Integer> highestBidders; //ItemID -> HighestBidderID
-        private HashMap<Integer,PublicKey> everyuserpubkey;
-        private HashMap<Integer,String> randomstringhashmap;
-        private ConcurrentHashMap<Integer,TokenInfo> usertokenmap;
-        private KeyPair pair;
-        private PrivateKey privateKey;
-        private PublicKey publicKey;
-        private int userID;
+    public ReplicaState(
+            ConcurrentHashMap<Integer, AuctionItem> itemMap,
+            ConcurrentHashMap<Integer, Integer> useridanditem,
+            ConcurrentHashMap<Integer, String> userHashMap,
+            ConcurrentHashMap<Integer, Integer> highestBidders,
+            HashMap<Integer, PublicKey> everyuserpubkey,
+            HashMap<Integer, String> randomstringhashmap,
+            ConcurrentHashMap<Integer, TokenInfo> usertokenmap,
+            KeyPair pair,
+            int userID,
+            PublicKey publicKey,
+            PrivateKey privateKey
+    ) {
+        this.itemMap = itemMap;
+        this.useridanditem = useridanditem;
+        this.userHashMap = userHashMap;
+        this.highestBidders = highestBidders;
+        this.everyuserpubkey = everyuserpubkey;
+        this.randomstringhashmap = randomstringhashmap;
+        this.usertokenmap = usertokenmap;
+        this.pair = pair;
+        this.userID = userID;
+        this.publicKey = publicKey;
+        this.privateKey = privateKey;
+    }
 
-        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, ConcurrentHashMap<Integer,TokenInfo> usertokenmap,KeyPair pair, int userID,PublicKey publicKey, PrivateKey privateKey){
-            this.itemMap = new ConcurrentHashMap<Integer, AuctionItem>();
-            this.useridanditem = new ConcurrentHashMap<Integer, Integer>();
-            this.userHashMap = new ConcurrentHashMap<Integer,String>();
-            this.highestBidders = new ConcurrentHashMap<Integer,Integer>();
-            this.usertokenmap = new ConcurrentHashMap<Integer,TokenInfo>();
-            this.everyuserpubkey = new HashMap<Integer,PublicKey>();
-            this.randomstringhashmap = new HashMap<Integer, String>();
-            this.pair = pair;
-            this.userID = userID;
-            this.privateKey = privateKey;
-            this.publicKey = publicKey;
-            // this.auctionData = auctionData;
-        }
+
 
         public void setItemMap(ConcurrentHashMap<Integer, AuctionItem> itemMap) {
             this.itemMap = itemMap;

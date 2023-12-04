@@ -53,10 +53,9 @@ public class Client {
                         System.out.println("enter userid");
                         if (scanner.hasNextInt()) {
                             int userid = scanner.nextInt();
-                            TokenInfo tokinf = gTokenInfo(userid, server);
-                            System.out.println(tokinf.token);
-                            if (tokinf != null && tokinf.token != null) {
-                                AuctionItem[] array = server.listItems(userid, tokinf.token);
+                            // TokenInfo tokinf = gTokenInfo(userid, server);
+                            // System.out.println(tokinf.token);
+                            AuctionItem[] array = server.listItems(userid, null);
                     
                                 if (array != null) {
                                     if (array.length == 0) {
@@ -72,14 +71,8 @@ public class Client {
                                     }
                                 } else {
                                     System.out.println("Server returned null array");
-                                }
-                            } else {
-                                System.out.println("TokenInfo or token is null");
-                            }
-                        } else {
-                            System.out.println("Invalid input. User ID must be an integer.");
-                            scanner.nextLine();  // Consume the invalid input
                         }
+                    }
                         break;                    
                         case "getspec":
                         // Extract itemID from the command (assuming the format is "getSpec <itemID>")
@@ -89,8 +82,8 @@ public class Client {
                             scanner.nextLine();
                             System.out.println("enter an itemID");
                             int itemID = scanner.nextInt();
-                            TokenInfo tok = gTokenInfo(id, server);
-                            AuctionItem auitem = server.getSpec(id,itemID,tok.token);
+                            // TokenInfo tok = gTokenInfo(id, server);
+                            AuctionItem auitem = server.getSpec(id,itemID,null);
                                 System.out.println("Name: " + auitem.name +
                                         "\nDescription: " + auitem.description +
                                         "\nItemID: " + auitem.itemID +
@@ -124,7 +117,7 @@ public class Client {
                             try {
                                 if (scanner.hasNextInt()) {
                                 int userID = scanner.nextInt();
-                                TokenInfo newtoken = gTokenInfo(userID, server);
+                                // TokenInfo newtoken = gTokenInfo(userID, server);
                                 scanner.nextLine();  // Consume the newline character
                                 AuctionSaleItem newItem = new AuctionSaleItem();
                                 System.out.println("Enter your item name:");
@@ -133,7 +126,7 @@ public class Client {
                                 newItem.description = scanner.nextLine();
                                 System.out.println("Enter a reserve Price: ");
                                 newItem.reservePrice = scanner.nextInt();
-                                server.newAuction(userID, newItem,newtoken.token);
+                                server.newAuction(userID, newItem,null);
                             } else {
                                 System.out.println("Invalid input. User ID must be an integer.");
                                 scanner.nextLine();  // Consume the invalid input
@@ -150,11 +143,11 @@ public class Client {
                             System.out.println("Enter your USER ID:");
                             if (scanner.hasNextInt()) {
                                 int userID = scanner.nextInt();
-                                TokenInfo tok = gTokenInfo(userID, server);
+                                // TokenInfo tok = gTokenInfo(userID, server);
                                 scanner.nextLine();
                                 System.out.println("Enter the Item id:");
                                 int itemid = scanner.nextInt();
-                                AuctionResult result = server.closeAuction(userID, itemid, tok.token);
+                                AuctionResult result = server.closeAuction(userID, itemid, null);
                                 System.out.println("Winner Email: "+result.winningEmail + "\n" + "Winning price: " + result.winningPrice);
                             }
                             break;
@@ -162,12 +155,12 @@ public class Client {
                             System.out.println("enter your USER ID:");
                             if (scanner.hasNextInt()) {
                                 int userid = scanner.nextInt();
-                                TokenInfo tok = gTokenInfo(userid, server);
+                                // TokenInfo tok = gTokenInfo(userid, server);
                                 System.out.println("Enter item ID: ");
                                 int itemid = scanner.nextInt();
                                 System.out.println("enter a price");
                                 int price = scanner.nextInt();
-                                Boolean result = server.bid(userid, itemid, price, tok.token);
+                                Boolean result = server.bid(userid, itemid, price, null);
                                 if (result == true) {
                                     System.out.println("success! you have successfully bid!");
                                 }else{

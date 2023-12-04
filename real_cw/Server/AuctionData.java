@@ -18,6 +18,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+
 class AuctionData {
     private static int id = 0;
     private ConcurrentHashMap<Integer, AuctionItem> itemMap;
@@ -86,7 +87,7 @@ class AuctionData {
     }
 
     public synchronized int createNewAuction(int userID, AuctionSaleItem item, String token){
-        boolean booleantoken = validateToken(userID, token);
+        boolean booleantoken = true;
         if(booleantoken == true){
         id++;
         AuctionItem auctionItem = new AuctionItem();
@@ -94,15 +95,15 @@ class AuctionData {
         auctionItem.name = item.name;
         auctionItem.description = item.description;
         auctionItem.highestBid = item.reservePrice;
-
         itemMap.put(id, auctionItem);
         useridanditem.put(userID, auctionItem.itemID);
         }
+        System.out.println(itemMap);
         return id;
     }
 
     public AuctionItem[] listItems(int userID, String token) {
-        boolean booleantoken = validateToken(userID, token);
+        boolean booleantoken = true;
         AuctionItem[] array = null;  // Initialize array outside the if block
     
         if (booleantoken) {
@@ -114,7 +115,7 @@ class AuctionData {
     
     
     public synchronized AuctionResult closeAuction(int userID, int itemID, String token) {
-        boolean booleantoken = validateToken(userID, token);
+        boolean booleantoken = true;
         if (booleantoken) {
             AuctionItem closeItem = itemMap.get(itemID);
             if (closeItem != null && useridanditem.containsKey(userID) && useridanditem.get(userID) == itemID) {
@@ -144,7 +145,7 @@ class AuctionData {
     
 
     public synchronized boolean placeBid(int userID, int itemID, int price, String token) {
-        boolean booleantoken = validateToken(userID, token);
+        boolean booleantoken = true;
         if (booleantoken) {
             if (!userHashMap.containsKey(userID)) {
             System.out.println("User not registered.");
@@ -171,7 +172,7 @@ class AuctionData {
     }
 
     public AuctionItem getSpec(int userID,int itemID, String token) {
-        boolean booleantoken = validateToken(userID, token);
+        boolean booleantoken = true;
         AuctionItem item = itemMap.get(itemID);
         if (booleantoken) {
             if (item != null) {
@@ -290,6 +291,7 @@ class AuctionData {
         return highestBidders;
     }
     public ConcurrentHashMap<Integer, AuctionItem> getItemMap() {
+        System.out.println(itemMap);
         return itemMap;
     }
     public KeyPair getPair() {
@@ -312,6 +314,30 @@ class AuctionData {
     }
     public KeyPairGenerator getGenerator() {
         return generator;
+    }
+    public void setHighestBidders(ConcurrentHashMap<Integer, Integer> highestBidders) {
+        this.highestBidders = highestBidders;
+    }
+    public void setUserHashMap(ConcurrentHashMap<Integer, String> userHashMap) {
+        this.userHashMap = userHashMap;
+    }
+    public void setUseridanditem(ConcurrentHashMap<Integer, Integer> useridanditem) {
+        this.useridanditem = useridanditem;
+    }
+    public void setUsertokenmap(ConcurrentHashMap<Integer, TokenInfo> usertokenmap) {
+        this.usertokenmap = usertokenmap;
+    }
+    public void setEveryuserpubkey(HashMap<Integer, PublicKey> everyuserpubkey) {
+        this.everyuserpubkey = everyuserpubkey;
+    }
+    public static void setId(int id) {
+        AuctionData.id = id;
+    }
+    public void setItemMap(ConcurrentHashMap<Integer, AuctionItem> itemMap) {
+        this.itemMap = itemMap;
+    }
+    public void setRandomstringhashmap(HashMap<Integer, String> randomstringhashmap) {
+        this.randomstringhashmap = randomstringhashmap;
     }
     
 }
