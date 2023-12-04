@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 
 
 class AuctionData {
-    private static int id = 0;
+    private int id = 0;
     private ConcurrentHashMap<Integer, AuctionItem> itemMap;
     private ConcurrentHashMap<Integer, Integer> useridanditem;
     private ConcurrentHashMap<Integer, String> userHashMap;
@@ -309,7 +309,7 @@ class AuctionData {
     public HashMap<Integer, String> getRandomstringhashmap() {
         return randomstringhashmap;
     }
-    public static int getId() {
+    public int getId() {
         return id;
     }
     public KeyPairGenerator getGenerator() {
@@ -330,8 +330,8 @@ class AuctionData {
     public void setEveryuserpubkey(HashMap<Integer, PublicKey> everyuserpubkey) {
         this.everyuserpubkey = everyuserpubkey;
     }
-    public static void setId(int id) {
-        AuctionData.id = id;
+    public void setId(int id) {
+        this.id = id;
     }
     public void setItemMap(ConcurrentHashMap<Integer, AuctionItem> itemMap) {
         this.itemMap = itemMap;
@@ -339,5 +339,6 @@ class AuctionData {
     public void setRandomstringhashmap(HashMap<Integer, String> randomstringhashmap) {
         this.randomstringhashmap = randomstringhashmap;
     }
+    
     
 }

@@ -226,7 +226,12 @@ public class Replica implements Replication{
         auctionData.setHighestBidders(state.getHighestBidders());
         auctionData.setUseridanditem(state.getUseridanditem());
         auctionData.setUserHashMap(state.getUserHashMap());
-        
+        auctionData.setId(state.getId());
+        System.out.println(auctionData.getItemMap().size());
+        System.out.println(auctionData.getHighestBidders().size());
+        System.out.println(auctionData.getUseridanditem().size());
+        System.out.println(auctionData.getUserHashMap().size());
+        System.out.println(auctionData.getId());
         }
     
     

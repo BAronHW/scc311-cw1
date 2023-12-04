@@ -17,6 +17,7 @@ public class ReplicaState implements Serializable {
     private int userID;
     private PublicKey publicKey;
     private PrivateKey privateKey;
+    private int id;
 
     public ReplicaState(
             ConcurrentHashMap<Integer, AuctionItem> itemMap,
@@ -111,5 +112,11 @@ public class ReplicaState implements Serializable {
         }
         public void setPublicKey(PublicKey publicKey) {
             this.publicKey = publicKey;
+        }
+        public int getId() {
+            return id;
+        }
+        public void setId(int id) {
+            this.id = id;
         }
     }
