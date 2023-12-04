@@ -16,7 +16,6 @@ public interface Replication extends Remote{
     public AuctionItem[] listItems(int userID, String token) throws RemoteException;
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException;
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException;
-    public int getPrimaryReplicaID() throws RemoteException;
     public void replicateData(AuctionData data) throws RemoteException;
     public int getReplicaID() throws RemoteException;
     public void addToReplicationMap(int replicaID, Replication replica) throws RemoteException;
@@ -25,4 +24,6 @@ public interface Replication extends Remote{
     public void getState(Replication replica) throws RemoteException, NotBoundException;
     public ReplicaState returncurrState() throws RemoteException;
     public Map<Integer, Replication> getReplicationMap() throws RemoteException;
+    public void setIsprimary(boolean isprimary) throws RemoteException;
+    public boolean getisprimary() throws RemoteException;
 }

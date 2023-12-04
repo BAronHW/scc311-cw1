@@ -18,20 +18,21 @@ public class Frontend implements Auction{
 
         
     }
-
+    
     public static void main(String[] args) {
-        try{
+        try {
             Frontend frontend = new Frontend();
             Auction stub = (Auction) UnicastRemoteObject.exportObject(frontend, 0);
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind("Frontend", stub);
             System.out.println("Frontend Ready");
-            choosePrimary();
+            Frontend.primaryReplica = choosePrimary();  // Assign the selected primary replica
         } catch (Exception e) {
             System.err.println("Error starting Frontend " + e.getMessage());
             e.printStackTrace();
         }
     }
+    
     
 
     private Replication getReplica(){
@@ -39,6 +40,7 @@ public class Frontend implements Auction{
             Registry registry = LocateRegistry.getRegistry();
             System.out.println("this is primary replica "+primaryReplica);
             Replication replica = (Replication) registry.lookup(primaryReplica);
+            replica.setIsprimary(true);
             return replica;
         }catch(Exception e){
             e.printStackTrace();
@@ -47,17 +49,24 @@ public class Frontend implements Auction{
     }
 
     @Override
-    public Integer register(String email, PublicKey pubKey) throws RemoteException {
-        Replication replica = getReplica();
-        if ((replica != null)) {
-            try{
-                return replica.register(email, pubKey);
-            }catch(Exception e){
-                System.err.println("there was a problem registering" + e.getMessage());
+public Integer register(String email, PublicKey pubKey) throws RemoteException {
+    Replication replica = getReplica();
+    if (replica != null) {
+        try {
+            Integer regid = replica.register(email, pubKey);
+            if (regid != null) {
+                return regid;
+            } else {
+                System.err.println("Registration failed. Received null registration ID.");
             }
+        } catch (Exception e) {
+            System.err.println("There was a problem registering: " + e.getMessage());
+            e.printStackTrace();
         }
-        return null;
     }
+    return null;  // Handle registration failure
+}
+
 
     @Override
     public ChallengeInfo challenge(int userID, String clientChallenge)
@@ -167,7 +176,7 @@ public class Frontend implements Auction{
     }
 
     private static String choosePrimary() throws RemoteException {
-        try{
+        try {
             List<String> newlist = new ArrayList<String>();
             Registry registry = LocateRegistry.getRegistry();
             String[] reglist = registry.list();
@@ -177,18 +186,27 @@ public class Frontend implements Auction{
                     System.out.println(string);
                 }
             }
-        int sizeofnewlist = newlist.size();
-        Random random = new Random();
-        int primid = (random.nextInt(sizeofnewlist) + 1);
-        Frontend.setPrimaryReplicaID(primid);
-        System.out.println(primid);
-        return Frontend.primaryReplica = ("Replica " + primid);
-        }catch(Exception e){
+    
+            int sizeofnewlist = newlist.size();
+            Random random = new Random();
+            int randomIndex = random.nextInt(sizeofnewlist);
+            String primaryReplica = newlist.get(randomIndex);
+    
+            // Extract the replica ID from the replica name
+            int primaryReplicaID = Integer.parseInt(primaryReplica.split(" ")[1]);
+    
+            // Set the primary replica ID in the Frontend class
+            Frontend.setPrimaryReplicaID(primaryReplicaID);
+    
+            System.out.println("Chosen Primary Replica: " + primaryReplica);
+    
+            return primaryReplica;
+        } catch (Exception e) {
             System.err.print(e);
         }
         return null;
-        
     }
+    
     
 
 

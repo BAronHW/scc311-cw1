@@ -1,7 +1,8 @@
     import java.io.Serializable;
 import java.security.KeyPair;
     import java.security.KeyPairGenerator;
-    import java.security.PublicKey;
+import java.security.PrivateKey;
+import java.security.PublicKey;
     import java.util.HashMap;
     import java.util.concurrent.ConcurrentHashMap;
 
@@ -15,9 +16,11 @@ import java.security.KeyPair;
         private HashMap<Integer,String> randomstringhashmap;
         private ConcurrentHashMap<Integer,TokenInfo> usertokenmap;
         private KeyPair pair;
+        private PrivateKey privateKey;
+        private PublicKey publicKey;
         private int userID;
 
-        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, ConcurrentHashMap<Integer,TokenInfo> usertokenmap,KeyPair pair, int userID){
+        public ReplicaState(ConcurrentHashMap<Integer, AuctionItem> itemMap, ConcurrentHashMap<Integer, Integer> useridanditem,ConcurrentHashMap<Integer, String> userHashMap,ConcurrentHashMap<Integer, Integer> highestBidders, HashMap<Integer,PublicKey> everyuserpubkey, HashMap<Integer,String> randomstringhashmap, ConcurrentHashMap<Integer,TokenInfo> usertokenmap,KeyPair pair, int userID,PublicKey publicKey, PrivateKey privateKey){
             this.itemMap = new ConcurrentHashMap<Integer, AuctionItem>();
             this.useridanditem = new ConcurrentHashMap<Integer, Integer>();
             this.userHashMap = new ConcurrentHashMap<Integer,String>();
@@ -27,6 +30,8 @@ import java.security.KeyPair;
             this.randomstringhashmap = new HashMap<Integer, String>();
             this.pair = pair;
             this.userID = userID;
+            this.privateKey = privateKey;
+            this.publicKey = publicKey;
             // this.auctionData = auctionData;
         }
 
@@ -83,5 +88,17 @@ import java.security.KeyPair;
         }
         public int getUserID() {
             return userID;
+        }
+        public PrivateKey getPrivateKey() {
+            return privateKey;
+        }
+        public PublicKey getPublicKey() {
+            return publicKey;
+        }
+        public void setPrivateKey(PrivateKey privateKey) {
+            this.privateKey = privateKey;
+        }
+        public void setPublicKey(PublicKey publicKey) {
+            this.publicKey = publicKey;
         }
     }

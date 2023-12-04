@@ -1,12 +1,15 @@
 import java.io.FileOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Signature;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.UUID;
@@ -37,11 +40,25 @@ class AuctionData {
         this.usertokenmap = new ConcurrentHashMap<>();
         executorService = Executors.newScheduledThreadPool(1);
         try {
+            Registry registry = LocateRegistry.getRegistry();
             this.generator = KeyPairGenerator.getInstance("RSA");
             this.generator.initialize(2048,new SecureRandom());
             AuctionData.this.pair = generator.generateKeyPair();
             PublicKey pubkey = pair.getPublic();
-            storePublicKey(pubkey,"../keys/serverKey.pub");
+            String[] reglist = registry.list();
+            ArrayList<String> arrayList = new ArrayList<String>();
+            for (String string : reglist) {
+                if (string.startsWith("Replica ")) {
+                    arrayList.add(string);
+                    System.out.println(string);
+                }
+            }
+            if (arrayList.size() < 1) {
+                storePublicKey(pubkey, "../keys/serverKey.pub");
+            } else {
+                System.out.println("More than one replica: don't store the public key again?");
+            }
+
 
         } catch (Exception e) {
             System.out.println(e);

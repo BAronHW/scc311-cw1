@@ -195,6 +195,7 @@ public class Client {
         }
         try {
             String randomString = UUID.randomUUID().toString();
+            System.out.println(randomString);
             ChallengeInfo challengeInfo = server.challenge(userid, randomString);
             Signature sig = Signature.getInstance("SHA256withRSA");
             PublicKey publicKeyss = readKey("../keys/serverKey.pub");
@@ -207,7 +208,7 @@ public class Client {
                 sig.update(challengeInfo.clientChallenge.getBytes());
                 byte[] digitalSignature = sig.sign();
                 // ChallengeInfo challengeInfo = new ChallengeInfo();
-                TokenInfo tokenInfo = server.authenticate(userid, digitalSignature);
+                TokenInfo tokenInfo = server.authenticate(userid, digitalSignature);    
                 return tokenInfo;
             }else{
                 System.out.println("server is fake");

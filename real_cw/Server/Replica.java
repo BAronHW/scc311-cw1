@@ -5,14 +5,13 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import javax.crypto.NoSuchPaddingException;
 
 public class Replica implements Replication{
@@ -21,6 +20,8 @@ public class Replica implements Replication{
     private AuctionData auctionData;
     ReplicaState currentstate;
     private Map<Integer, Replication> replicationMap; //store the existence of other replicas
+    private boolean isprimary = false;
+
     
     public Replica(int replicaID) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
@@ -28,6 +29,7 @@ public class Replica implements Replication{
         Replica.userID = 0;
         this.replicaID = replicaID;
         this.replicationMap = new HashMap<Integer, Replication>();
+        
         // Replication replicastub = (Replication) UnicastRemoteObject.exportObject(this, 0);
         // Registry registry = LocateRegistry.getRegistry();
         // registry.rebind(Integer.toString(replicaID), replicastub)
@@ -39,7 +41,7 @@ public class Replica implements Replication{
             System.exit(1);
         }
         int replicaID = Integer.parseInt(args[0]);
-
+        
         try {
             Replica server = new Replica(replicaID);
             Replication stub = (Replication) UnicastRemoteObject.exportObject(server, 0);
@@ -47,7 +49,12 @@ public class Replica implements Replication{
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
             server.notifyReplicas();
-            server.getState(server);
+            //get every replica in the hashmap except for the primary replica
+            //for each of the replicas that is not primary call server.getstate()
+            // server.getState(replicationMap.get(1));
+            for (Replication replica : server.getReplicationMap().values()) {
+                    replica.getState(server);
+                }
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
         } catch (Exception e) {
@@ -63,6 +70,7 @@ public class Replica implements Replication{
     }
 
     public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException{
+        System.out.println("userID:"+userID+" clientChallenge:"+clientChallenge	);
         ChallengeInfo cInfo = auctionData.challenge(userID, clientChallenge);
         // for (Replication replica : getReplicationMap().values()) {
         //     try {
@@ -77,6 +85,7 @@ public class Replica implements Replication{
     }
 
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
+        System.out.println("userID: " + userID+"suthenticate");
         TokenInfo tinfo = auctionData.authenticate(userID, signature);
         // for (Replication replica : getReplicationMap().values()) {
         //     try {
@@ -181,21 +190,23 @@ public class Replica implements Replication{
         ConcurrentHashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
         KeyPair pair = auctionData.getPair();
         int userID = getUserID();
+        PrivateKey privateKey = pair.getPrivate();
+        PublicKey publicKey = pair.getPublic();
 
         ReplicaState currentstate = new ReplicaState(
             itemMap, useridanditem, userHashMap, highestBidders,
             everyuserpubkey, randomstringhashmap, usertokenmap
-            , pair, userID
+            , pair, userID,publicKey,privateKey
         );
         return currentstate;
     }
 
     
-    public void getState(Replication server) throws RemoteException, NotBoundException{
+    public void getState(Replication otherserver) throws RemoteException, NotBoundException{
         // for the secondary replicas so that they can set take apart the currentstate variable and put it into their own states
         Registry registry = LocateRegistry.getRegistry();
-        ReplicaState state = server.returncurrState();
-            for (Replication replica : server.getReplicationMap().values()) {
+        ReplicaState state = otherserver.returncurrState();
+            for (Replication replica : otherserver.getReplicationMap().values()) {
                 Replication rep = (Replication) registry.lookup("Replica "+replica.getReplicaID());
                     rep.setCurrentstate(state);
                     
@@ -249,6 +260,16 @@ public class Replica implements Replication{
     }
     public ReplicaState getCurrentstate() {
         return currentstate;
+    }
+    public void setIsprimary(boolean isprimary) {
+        this.isprimary = isprimary;
+    }
+    
+    public boolean getisprimary(){
+        return this.isprimary;
+    }
+    public Map<Integer, Replication> getreplicationmap(){
+        return this.replicationMap;
     }
     
     
