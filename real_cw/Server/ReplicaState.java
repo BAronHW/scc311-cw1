@@ -17,32 +17,27 @@ public class ReplicaState implements Serializable {
     private int userID;
     private PublicKey publicKey;
     private PrivateKey privateKey;
-    private int id;
+    private int itemid;
 
     public ReplicaState(
             ConcurrentHashMap<Integer, AuctionItem> itemMap,
             ConcurrentHashMap<Integer, Integer> useridanditem,
             ConcurrentHashMap<Integer, String> userHashMap,
             ConcurrentHashMap<Integer, Integer> highestBidders,
-            HashMap<Integer, PublicKey> everyuserpubkey,
-            HashMap<Integer, String> randomstringhashmap,
-            ConcurrentHashMap<Integer, TokenInfo> usertokenmap,
-            KeyPair pair,
             int userID,
-            PublicKey publicKey,
-            PrivateKey privateKey
+            int itemid
     ) {
         this.itemMap = itemMap;
         this.useridanditem = useridanditem;
         this.userHashMap = userHashMap;
         this.highestBidders = highestBidders;
-        this.everyuserpubkey = everyuserpubkey;
-        this.randomstringhashmap = randomstringhashmap;
-        this.usertokenmap = usertokenmap;
-        this.pair = pair;
+        // this.everyuserpubkey = everyuserpubkey;
+        // this.randomstringhashmap = randomstringhashmap;
+        // this.usertokenmap = usertokenmap;
         this.userID = userID;
-        this.publicKey = publicKey;
-        this.privateKey = privateKey;
+        this.itemid = itemid;
+        // this.publicKey = publicKey;
+        // this.privateKey = privateKey;
     }
 
 
@@ -113,10 +108,11 @@ public class ReplicaState implements Serializable {
         public void setPublicKey(PublicKey publicKey) {
             this.publicKey = publicKey;
         }
-        public int getId() {
-            return id;
+
+        public int getItemid() {
+            return itemid;
         }
-        public void setId(int id) {
-            this.id = id;
+        public void setItemid(int itemid) {
+            this.itemid = itemid;
         }
     }

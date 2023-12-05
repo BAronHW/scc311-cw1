@@ -24,7 +24,7 @@ public class Client {
     static boolean loop = true;
     private static KeyPairGenerator generator;
     private static KeyPair pair;
-    private static HashMap<Integer,PrivateKey> everyuserprivkey = new HashMap<Integer,PrivateKey>();
+    // private static HashMap<Integer,PrivateKey> everyuserprivkey = new HashMap<Integer,PrivateKey>();
 
     public static void main(String[] args) {
         try {
@@ -55,7 +55,7 @@ public class Client {
                             int userid = scanner.nextInt();
                             // TokenInfo tokinf = gTokenInfo(userid, server);
                             // System.out.println(tokinf.token);
-                            AuctionItem[] array = server.listItems(userid, null);
+                            AuctionItem[] array = server.listItems(userid,null);
                     
                                 if (array != null) {
                                     if (array.length == 0) {
@@ -104,8 +104,8 @@ public class Client {
 
                             PrivateKey privkey = pair.getPrivate();
                             PublicKey pubkey = pair.getPublic();
-                            int userid = server.register(email, pubkey);
-                            everyuserprivkey.put(userid,privkey);
+                            int userid = server.register(email, null);
+                            // everyuserprivkey.put(userid,privkey);
                             
                             System.out.println("This is your userID: " + userid);
                         }
@@ -179,42 +179,9 @@ public class Client {
     }
 
     public static TokenInfo gTokenInfo(int userid, Auction server) throws InvalidKeyException, RemoteException, NoSuchAlgorithmException, SignatureException {
-        PrivateKey thisclientskey = everyuserprivkey.get(userid);
-        System.out.println("starting challenge");
-        // Check if the private key exists
-        if (thisclientskey == null) {
-            System.out.println("Private key not found for user ID: " + userid);
-            return null;  // or handle the situation as needed
-        }
-        try {
-            String randomString = UUID.randomUUID().toString();
-            System.out.println(randomString);
-            ChallengeInfo challengeInfo = server.challenge(userid, randomString);
-            Signature sig = Signature.getInstance("SHA256withRSA");
-            PublicKey publicKeyss = readKey("../keys/serverKey.pub");
-            sig.initVerify(publicKeyss);
-            sig.update(randomString.getBytes());
-            boolean isValidSignature = sig.verify(challengeInfo.response);
-            if (isValidSignature) {
-                // System.out.println(readKey("../keys/server_public.key"));
-                sig.initSign(thisclientskey);
-                sig.update(challengeInfo.clientChallenge.getBytes());
-                byte[] digitalSignature = sig.sign();
-                // ChallengeInfo challengeInfo = new ChallengeInfo();
-                TokenInfo tokenInfo = server.authenticate(userid, digitalSignature);    
-                return tokenInfo;
-            }else{
-                System.out.println("server is fake");
-                return null;
-            }
-            
-            
-        } catch (Exception e) {
-            System.out.println("Exception in gTokenInfo: " + e.getMessage());
-            e.printStackTrace();
             return null;  // or handle the exception as needed
         }
-}
+
 
 public static PublicKey readKey(String filePath) {
         try {
@@ -230,7 +197,7 @@ public static PublicKey readKey(String filePath) {
             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
             PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 
-            return publicKey;
+            return null;
         } catch (Exception e) {
             System.err.println("Exception in readKey: " + e.getMessage());
             e.printStackTrace();

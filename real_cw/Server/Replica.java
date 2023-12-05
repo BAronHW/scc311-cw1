@@ -15,20 +15,28 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.crypto.NoSuchPaddingException;
 
 public class Replica implements Replication{
-    private static int userID;
+    private int userID;
     public int replicaID;
     private AuctionData auctionData;
     ReplicaState currentstate;
     private Map<Integer, Replication> replicationMap; //store the existence of other replicas
-    private boolean isprimary = false;
+    private boolean isprimary;
 
     
     public Replica(int replicaID) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
         super();
         this.auctionData = new AuctionData(replicaID);
-        Replica.userID = 0;
+        this.userID = 0;
         this.replicaID = replicaID;
         this.replicationMap = new HashMap<Integer, Replication>();
+        for (Replication otherreplica : getReplicationMap().values()) {
+            try {
+                otherreplica.getState(replicaID);
+            } catch (NotBoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         
         // Replication replicastub = (Replication) UnicastRemoteObject.exportObject(this, 0);
         // Registry registry = LocateRegistry.getRegistry();
@@ -52,9 +60,14 @@ public class Replica implements Replication{
             //get every replica in the hashmap except for the primary replica
             //for each of the replicas that is not primary call server.getstate()
             // server.getState(replicationMap.get(1));
-            for (Replication replica : server.getReplicationMap().values()) {
-                    replica.getState(replicaID);
-                }
+            for (Replication otherreplica : server.replicationMap.values()) {
+            try {
+                otherreplica.getState(replicaID);
+            } catch (NotBoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
         } catch (Exception e) {
@@ -81,7 +94,7 @@ public class Replica implements Replication{
         //     }
         // }
         System.out.println(cInfo);
-        return cInfo;
+        return null;
     }
 
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
@@ -96,7 +109,7 @@ public class Replica implements Replication{
         //     }
         // }
         System.out.println(tinfo);
-        return tinfo;
+        return null;
     }
     
     public Integer register(String email, PublicKey pubKey) throws RemoteException {
@@ -116,39 +129,39 @@ public class Replica implements Replication{
     }
 
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
-        return auctionData.getSpec(itemID,userID,token);
-    }
-
-    public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
-        int id = auctionData.createNewAuction(userID, item, token);
-        ConcurrentHashMap<Integer, Integer> map = currentstate.getHighestBidders();
-        map.forEach((key, value) -> {
-            if (key != null && value != null) {
-                System.out.println("ItemID: " + key + ", HighestBidderID: " + value);
-            } else {
-                System.out.println("Null entry detected.");
-            }
-        });
         for (Replication otherreplica : getReplicationMap().values()) {
             try {
-
                 otherreplica.getState(this.replicaID);
             } catch (NotBoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
-        System.out.println(map.size());
+        return auctionData.getSpec(itemID,userID,token);
+    }
 
-        
+    public Integer newAuction(int userID, AuctionSaleItem item, String token) throws RemoteException {
+        setIsprimary(true);
+        int id = auctionData.createNewAuction(userID, item, token);
+        for (Replication otherreplica : getReplicationMap().values()) {
+            try {
+                otherreplica.getState(this.replicaID);
+            } catch (NotBoundException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
         return id;
     }
 
     public AuctionItem[] listItems(int userID, String token) throws RemoteException {
+        setIsprimary(true);
+        System.out.println("I am primary is "+isprimary);
         return auctionData.listItems(userID, token);
     }
     
     public AuctionResult closeAuction(int userID, int itemID, String token) throws RemoteException {
+        setIsprimary(true);
         AuctionResult ac = auctionData.closeAuction(userID, itemID,token);
         for (Replication otherreplica : getReplicationMap().values()) {
             try {
@@ -160,17 +173,20 @@ public class Replica implements Replication{
         }
         return ac;
     }
+    
 
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
-        for (Replication replica : getReplicationMap().values()) {
+        setIsprimary(true);
+        boolean bool = auctionData.placeBid(userID, itemID, price,token);
+        for (Replication otherreplica : getReplicationMap().values()) {
             try {
-                replica.getState(this.replicaID);
+                otherreplica.getState(this.replicaID);
             } catch (NotBoundException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
-        boolean bool = auctionData.placeBid(userID, itemID, price,token);
+        
         return bool;
     }
 
@@ -188,24 +204,25 @@ public class Replica implements Replication{
 
     //everytime the primary state changes get the replicas from the primary replica hashmap and update their state
     //to return the primary replicas current state to the secondary replicas
-    public ReplicaState returncurrState(){
+    public ReplicaState returncurrState() throws RemoteException{
         ConcurrentHashMap<Integer, AuctionItem> itemMap = auctionData.getItemMap();
         ConcurrentHashMap<Integer, Integer> useridanditem = auctionData.getUseridanditem();
         ConcurrentHashMap<Integer, String> userHashMap = auctionData.getUserHashMap();
         ConcurrentHashMap<Integer, Integer> highestBidders = auctionData.getHighestBidders();
-        HashMap<Integer, PublicKey> everyuserpubkey = auctionData.getEveryuserpubkey();
-        HashMap<Integer, String> randomstringhashmap = auctionData.getRandomstringhashmap();
-        ConcurrentHashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
-        KeyPair pair = auctionData.getPair();
+
+        // HashMap<Integer, PublicKey> everyuserpubkey = auctionData.getEveryuserpubkey();
+        // HashMap<Integer, String> randomstringhashmap = auctionData.getRandomstringhashmap();
+        // ConcurrentHashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
+        // KeyPair pair = auctionData.getPair();
         int userID = getUserID();
-        PrivateKey privateKey = pair.getPrivate();
-        PublicKey publicKey = pair.getPublic();
-        System.out.println("returncurrstate's"+itemMap);
+        int itemID = auctionData.getId();
+        // PrivateKey privateKey = pair.getPrivate();
+        // PublicKey publicKey = pair.getPublic();
+        // System.out.println("returncurrstate's"+itemMap);
 
         ReplicaState currentstate = new ReplicaState(
-            itemMap, useridanditem, userHashMap, highestBidders,
-            everyuserpubkey, randomstringhashmap, usertokenmap
-            , pair, userID,publicKey,privateKey
+            itemMap, useridanditem, userHashMap, highestBidders
+            ,userID,itemID
         );
         return currentstate;
     }
@@ -213,19 +230,34 @@ public class Replica implements Replication{
     
     public void getState(int myreplicaid) throws RemoteException, NotBoundException {
         // for the secondary replicas so that they can set take apart the currentstate variable and put it into their own states
-        Registry registry = LocateRegistry.getRegistry();
-        // Get the current state from the primary replica
-        Replication replica = (Replication) registry.lookup("Replica "+myreplicaid);
-        ReplicaState state = replica.returncurrState();
-        System.out.println("getstate"+state.getItemMap());
-        setCurrentstate(state);
-        auctionData.setItemMap(state.getItemMap());
-        auctionData.setHighestBidders(state.getHighestBidders());
-        auctionData.setUseridanditem(state.getUseridanditem());
-        auctionData.setUserHashMap(state.getUserHashMap());
-        auctionData.setId(state.getId());
+        try {
+            Registry registry = LocateRegistry.getRegistry();
+            // Get the current state from the primary replica
+            Replication replica = (Replication) registry.lookup("Replica "+myreplicaid);
+            ReplicaState state = replica.returncurrState();
+            System.out.println("getstate"+state.getItemMap());
+            setCurrentstate(state);
+            auctionData.setItemMap(state.getItemMap());
+            auctionData.setHighestBidders(state.getHighestBidders());
+            auctionData.setUseridanditem(state.getUseridanditem());
+            auctionData.setUserHashMap(state.getUserHashMap());
+            this.setUserID(state.getUserID());
+            auctionData.setId(state.getItemid());
+            System.out.println("states item map "+ state.getItemMap());
+        } catch (Exception e) {
+            // TODO: handle exception
+            e.printStackTrace();
+        }
+        
         }
     
+    // public void unwrap(ReplicaState state){
+    //     auctionData.setItemMap(state.getItemMap());
+    //     auctionData.setHighestBidders(state.getHighestBidders());
+    //     auctionData.setUseridanditem(state.getUseridanditem());
+    //     auctionData.setUserHashMap(state.getUserHashMap());
+    //     auctionData.setId(state.getId());
+    // }
     
 
 
@@ -267,8 +299,12 @@ public class Replica implements Replication{
         return auctionData;
     }
 
-    public static int getUserID() {
+    public int getUserID() {
         return userID;
+    }
+
+    public void setUserID(int userID) {
+        this.userID = userID;
     }
     public void setCurrentstate(ReplicaState currentstate) {
         this.currentstate = currentstate;
@@ -291,6 +327,7 @@ public class Replica implements Replication{
     public boolean ping() throws RemoteException {
         return true;
     }
+    
     
     
     

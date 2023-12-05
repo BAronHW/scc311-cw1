@@ -222,13 +222,21 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
         if (replica!=null && pingReplica(replica)) {
             return replica;
         }else{
-            Frontend.primaryReplica = choosePrimary();
+            // check what the current primary replica is and then choose one that isnt that one
+            Registry registry = LocateRegistry.getRegistry();
+            String[] rmiarr =  registry.list();
+            ArrayList<String> rmiarArrayList = new ArrayList<String>();
+            for (String string : rmiarr) {
+                if (string.equals(Frontend.primaryReplica)) {
+                    System.out.println("found primary replica in rmiregistry "); 
+                }
+                rmiarArrayList.add(string);
+            }
             Replication anotherReplica = getReplica();
             return anotherReplica;
         }
         
     }
-    
 
 
 
