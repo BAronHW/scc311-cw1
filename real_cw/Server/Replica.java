@@ -98,35 +98,35 @@ public class Replica implements Replication{
     }
 
     public TokenInfo authenticate(int userID, byte[] signature) throws RemoteException {
-        System.out.println("userID: " + userID+"suthenticate");
-        TokenInfo tinfo = auctionData.authenticate(userID, signature);
-        // for (Replication replica : getReplicationMap().values()) {
-        //     try {
-        //         replica.getState(replica);
-        //     } catch (NotBoundException e) {
-        //         // TODO Auto-generated catch block
-        //         e.printStackTrace();
-        //     }
-        // }
-        System.out.println(tinfo);
+        // System.out.println("userID: " + userID+"suthenticate");
+        // TokenInfo tinfo = auctionData.authenticate(userID, signature);
+        // // for (Replication replica : getReplicationMap().values()) {
+        // //     try {
+        // //         replica.getState(replica);
+        // //     } catch (NotBoundException e) {
+        // //         // TODO Auto-generated catch block
+        // //         e.printStackTrace();
+        // //     }
+        // // }
+        // System.out.println(tinfo);
         return null;
     }
     
     public Integer register(String email, PublicKey pubKey) throws RemoteException {
         userID++;
-        System.out.println(pubKey);
         int regid = auctionData.registerUser(userID, email, pubKey);
+        System.out.println("regid: " + regid); // Add this line to check the value
         for (Replication otherreplica : getReplicationMap().values()) {
             try {
-
                 otherreplica.getState(this.replicaID);
             } catch (NotBoundException e) {
-                // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
         return regid;
     }
+    
+    
 
     public AuctionItem getSpec(int userID, int itemID, String token) throws RemoteException {
         for (Replication otherreplica : getReplicationMap().values()) {

@@ -183,26 +183,25 @@ public class Client {
         }
 
 
-public static PublicKey readKey(String filePath) {
-        try {
-            // Read the public key from the specified file
-            byte[] keyBytes = Files.readAllBytes(Paths.get(filePath));
-            String publicKeyBase64 = new String(keyBytes, StandardCharsets.UTF_8);
+// public static PublicKey readKey(String filePath) {
+//         try {
+//             // Read the public key from the specified file
+//             byte[] keyBytes = Files.readAllBytes(Paths.get(filePath));
+//             String publicKeyBase64 = new String(keyBytes, StandardCharsets.UTF_8);
 
-            // Decode the Base64-encoded public key
-            byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64);
+//             // Decode the Base64-encoded public key
+//             byte[] publicKeyBytes = Base64.getDecoder().decode(publicKeyBase64);
 
-            // Generate the PublicKey object from the decoded bytes
-            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-            X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
-            PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
+//             // Generate the PublicKey object from the decoded bytes
+//             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+//             X509EncodedKeySpec publicKeySpec = new X509EncodedKeySpec(publicKeyBytes);
+//             PublicKey publicKey = keyFactory.generatePublic(publicKeySpec);
 
-            return null;
-        } catch (Exception e) {
-            System.err.println("Exception in readKey: " + e.getMessage());
-            e.printStackTrace();
-            return null;
-        }
-    }
+//             return null;
+//         } catch (Exception e) {
+//             System.err.println("Exception in readKey: " + e.getMessage());
+//             e.printStackTrace();
+//             return null;
+//         }
+//     }
 }
-

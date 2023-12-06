@@ -39,22 +39,22 @@ class AuctionData {
         executorService = Executors.newScheduledThreadPool(1);
         try {
             Registry registry = LocateRegistry.getRegistry();
-            this.generator = KeyPairGenerator.getInstance("RSA");
-            this.generator.initialize(2048,new SecureRandom());
-            AuctionData.this.pair = generator.generateKeyPair();
-            PublicKey pubkey = pair.getPublic();
-            String[] reglist = registry.list();
-            ArrayList<String> arrayList = new ArrayList<String>();
-            for (String string : reglist) {
-                if (string.startsWith("Replica ")) {
-                    arrayList.add(string);
-                }
-            }
-            if (arrayList.size() < 1) {
-                storePublicKey(pubkey, "../keys/serverKey.pub");
-            } else {
-                System.out.println("More than one replica: don't store the public key again?");
-            }
+            // this.generator = KeyPairGenerator.getInstance("RSA");
+            // this.generator.initialize(2048,new SecureRandom());
+            // AuctionData.this.pair = generator.generateKeyPair();
+            // PublicKey pubkey = pair.getPublic();
+            // String[] reglist = registry.list();
+            // ArrayList<String> arrayList = new ArrayList<String>();
+            // for (String string : reglist) {
+            //     if (string.startsWith("Replica ")) {
+            //         arrayList.add(string);
+            //     }
+            // }
+            // if (arrayList.size() < 1) {
+            //     storePublicKey(pubkey, "../keys/serverKey.pub");
+            // } else {
+            //     System.out.println("More than one replica: don't store the public key again?");
+            // }
 
 
         } catch (Exception e) {
@@ -178,23 +178,23 @@ class AuctionData {
     }
 
     public ChallengeInfo challenge(int userID, String clientChallenge) throws RemoteException {
-        try {
-            PrivateKey privkey = pair.getPrivate();
-            Signature sig = Signature.getInstance("SHA256withRSA");
-            sig.initSign(privkey);
-            sig.update(clientChallenge.getBytes(StandardCharsets.UTF_8));
-            byte[] digitalSignature = sig.sign();
-            ChallengeInfo challengeInfo = new ChallengeInfo();
-            String randomString = UUID.randomUUID().toString();
-            // randomstringhashmap.put(userID, randomString);
-            challengeInfo.response = digitalSignature;
-            challengeInfo.clientChallenge = randomString;
-            return challengeInfo;
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
+        // try {
+        //     PrivateKey privkey = pair.getPrivate();
+        //     Signature sig = Signature.getInstance("SHA256withRSA");
+        //     sig.initSign(privkey);
+        //     sig.update(clientChallenge.getBytes(StandardCharsets.UTF_8));
+        //     byte[] digitalSignature = sig.sign();
+        //     ChallengeInfo challengeInfo = new ChallengeInfo();
+        //     String randomString = UUID.randomUUID().toString();
+        //     // randomstringhashmap.put(userID, randomString);
+        //     challengeInfo.response = digitalSignature;
+        //     challengeInfo.clientChallenge = randomString;
+        //     return challengeInfo;
+        // } catch (Exception e) {
+        //     System.out.println(e.getMessage());
             return null;
         }
-    }
+    
     
     // ...
     
@@ -217,7 +217,7 @@ class AuctionData {
                 tokenInfo.expiryTime = expirationTimeMillis;
                 // usertokenmap.put(userID, tokenInfo);
                 // Return the TokenInfo object
-                return tokenInfo;
+                return null;
         } catch (Exception e) {
             System.out.println("Exception during authentication: " + e.getMessage());
         }
