@@ -104,7 +104,7 @@ public class Client {
 
                             PrivateKey privkey = pair.getPrivate();
                             PublicKey pubkey = pair.getPublic();
-                            int userid = server.register(email, null);
+                            int userid = server.register(email, pubkey);
                             // everyuserprivkey.put(userid,privkey);
                             
                             System.out.println("This is your userID: " + userid);

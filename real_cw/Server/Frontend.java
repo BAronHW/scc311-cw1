@@ -226,8 +226,17 @@ public Integer register(String email, PublicKey pubKey) throws RemoteException {
             String[] reglist = registry.list();
             for (String string : reglist) {
                 if (string.startsWith("Replica")) {
-                    newlist.add(string);
-                    System.out.println(string);
+                    try {
+                        Replication replication = (Replication) registry.lookup(string);
+                        replication.ping();
+                        newlist.add(string);
+                        System.out.println(string);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                    
+                    
+                    
                 }
             }
     
@@ -278,20 +287,16 @@ private Replication getAliveReplica() throws RemoteException, NotBoundException 
         }
 
         // Choose a new primary replica
-        Frontend.primaryReplica = choosePrimary();
+        primaryReplica = choosePrimary();
         System.out.println("The new primary replica that was chose is: "+primaryReplica);
 
         // Get a new replica
         Replication newreplica = getReplica();
         return newreplica;
     } else {
+        //return working replica
         return replica;
     }
 }
 
-
-
-
-    
-    
 }
