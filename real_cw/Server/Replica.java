@@ -4,9 +4,7 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
-import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,10 +35,6 @@ public class Replica implements Replication{
                 e.printStackTrace();
             }
         }
-        
-        // Replication replicastub = (Replication) UnicastRemoteObject.exportObject(this, 0);
-        // Registry registry = LocateRegistry.getRegistry();
-        // registry.rebind(Integer.toString(replicaID), replicastub)
     }
 
     public static void main(String[] args) {
@@ -57,17 +51,23 @@ public class Replica implements Replication{
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
             server.notifyReplicas();
+
             //get every replica in the hashmap except for the primary replica
             //for each of the replicas that is not primary call server.getstate()
             // server.getState(replicationMap.get(1));
-            for (Replication otherreplica : server.replicationMap.values()) {
-            try {
-                otherreplica.getState(replicaID);
-            } catch (NotBoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
+            // for (int i : server.replicationMap.keySet()) {
+            //     try {
+            //         Replication otherreplica = server.replicationMap.get(i);
+            //         System.out.println(otherreplica.getReplicaID());
+            //         otherreplica.getState(replicaID);
+            //     } catch (Exception e) {
+                    
+            //     }
+                
+            // }
+                
+            
+        
             System.out.println("Server ready");
             System.out.println("This Replica's ID is " + replicaID);
         } catch (Exception e) {
@@ -119,8 +119,8 @@ public class Replica implements Replication{
             for (int i : getReplicationMap().keySet()) {
                 try {
                     Replication otherreplica = replicationMap.get(i);
-                System.out.println(otherreplica.getReplicaID());
-                otherreplica.getState(this.replicaID);
+                    System.out.println(otherreplica.getReplicaID());
+                    otherreplica.getState(this.replicaID);
                 } catch (Exception e) {
                     // TODO: handle exception
                     // e.printStackTrace();
@@ -193,13 +193,17 @@ public class Replica implements Replication{
     public boolean bid(int userID, int itemID, int price, String token) throws RemoteException {
         setIsprimary(true);
         boolean bool = auctionData.placeBid(userID, itemID, price,token);
-        try {
-            for (Replication otherreplica : getReplicationMap().values()) {
+        for (int i : getReplicationMap().keySet()) {
+                try {
+                    Replication otherreplica = replicationMap.get(i);
+                System.out.println(otherreplica.getReplicaID());
                 otherreplica.getState(this.replicaID);
+                } catch (Exception e) {
+                    // TODO: handle exception
+                    // e.printStackTrace();
+                }
+                
             }
-        } catch (Exception e) {
-            // TODO: handle exception
-        }
         
         return bool;
     }
@@ -248,7 +252,7 @@ public class Replica implements Replication{
             Registry registry = LocateRegistry.getRegistry();
             // Get the current state from the primary replica
             Replication replica = (Replication) registry.lookup("Replica "+myreplicaid);
-            ReplicaState state = replica.returncurrState();
+            ReplicaState state = (ReplicaState) replica.returncurrState();
             System.out.println("getstate"+state.getItemMap());
             setCurrentstate(state);
             auctionData.setItemMap(state.getItemMap());
@@ -257,7 +261,7 @@ public class Replica implements Replication{
             auctionData.setUserHashMap(state.getUserHashMap());
             this.setUserID(state.getUserID());
             auctionData.setId(state.getItemid());
-            System.out.println("states item map "+ state.getItemMap());
+            System.out.println("states item map "+ state.getUserID());
         } catch (Exception e) {
             // TODO: handle exception
             e.printStackTrace();
@@ -293,11 +297,18 @@ public class Replica implements Replication{
             
             for (String replicaName : replicas) {
                 if (!replicaName.equals("Replica " + replicaID)) {
-                    Replication replica = (Replication) registry.lookup(replicaName);
-                    replicationMap.put(replica.getReplicaID(), replica);
-                    Replication myselfreplica = (Replication) registry.lookup("Replica "+this.getReplicaID());
-                    replica.addToReplicationMap(replicaID, myselfreplica);
-                    System.out.println(" Added replica " + replica.getReplicaID());
+                    try {
+                        Replication replica = (Replication) registry.lookup(replicaName);
+                        replicationMap.put(replica.getReplicaID(), replica);
+                        Replication myselfreplica = (Replication) registry.lookup("Replica "+this.getReplicaID());
+                        replica.addToReplicationMap(replicaID, myselfreplica);
+                        System.out.println(replica.getReplicaID());
+                        myselfreplica.getState(replicaID);
+                        
+                        System.out.println(" Added replica " + replica.getReplicaID());
+                    } catch (Exception e) {
+                        // TODO: handle exception
+                    }
                 }
             }
         } catch (Exception e) {
