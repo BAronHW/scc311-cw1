@@ -6,6 +6,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,6 +20,7 @@ public class Replica implements Replication{
     ReplicaState currentstate;
     private Map<Integer, Replication> replicationMap; //store the existence of other replicas
     private boolean isprimary;
+    private Long lastupdate;
 
     
     public Replica(int replicaID) throws RemoteException, NoSuchAlgorithmException, NoSuchPaddingException, InvalidKeyException {
@@ -70,26 +72,23 @@ public class Replica implements Replication{
         }
     }
 
+    //need to make a timestamp everytime a replica shares its state which tells which one has been updated most recently
+    //afterthis using syncwithprimaryreplica you list out all the replicas in the map and find the one with the most recently updated replica and take its replica id and use it to run getstate.
     public void syncWithPrimaryReplica() {
         try {
+            long maxTimestamp = Long.MIN_VALUE;
+            int maxTimestampReplicaID = 1;
             // Iterate through all replicas in the RMI room
-            for (Replication replica : getReplicationMap().values()) {
-                try {
-                    // Check if the current replica is the primary one
-                    if (replica.getisprimary()) {
-                        // Get the replica ID of the primary replica
-                        int primaryReplicaID = replica.getReplicaID();
-    
-                        // Call getState on the primary replica
-                        getState(primaryReplicaID);
-                        System.out.println("Synced with primary replica: " + primaryReplicaID);
-                        return; // Exit the loop after syncing with the primary replica
+            for (Replication otherreplica : getReplicationMap().values()) {
+                
+                    Long timestamp = otherreplica.getLastupdate();
+                    if (timestamp>maxTimestamp) {
+                        maxTimestamp = timestamp;
+                        maxTimestampReplicaID = otherreplica.getReplicaID();
                     }
-                } catch (RemoteException e) {
-                    // Handle RemoteException if it occurs during the RMI call
-                    e.printStackTrace(); // Consider logging the exception
                 }
-            }
+            getState(maxTimestampReplicaID);
+            System.out.println("Synced with most recent replica : " + maxTimestampReplicaID);
     
             // If no primary replica is found, print a message or handle it as needed
             System.out.println("No primary replica found.");
@@ -249,7 +248,7 @@ public class Replica implements Replication{
         ConcurrentHashMap<Integer, Integer> useridanditem = auctionData.getUseridanditem();
         ConcurrentHashMap<Integer, String> userHashMap = auctionData.getUserHashMap();
         ConcurrentHashMap<Integer, Integer> highestBidders = auctionData.getHighestBidders();
-
+        Long currenttime = Instant.now().getEpochSecond();
         // HashMap<Integer, PublicKey> everyuserpubkey = auctionData.getEveryuserpubkey();
         // HashMap<Integer, String> randomstringhashmap = auctionData.getRandomstringhashmap();
         // ConcurrentHashMap<Integer, TokenInfo> usertokenmap = auctionData.getUsertokenmap();
@@ -262,7 +261,7 @@ public class Replica implements Replication{
 
         ReplicaState currentstate = new ReplicaState(
             itemMap, useridanditem, userHashMap, highestBidders
-            ,userID,itemID
+            ,userID,itemID,currenttime
         );
         return currentstate;
     }
@@ -283,7 +282,9 @@ public class Replica implements Replication{
             auctionData.setUserHashMap(state.getUserHashMap());
             this.setUserID(state.getUserID());
             auctionData.setId(state.getItemid());
+            this.setLastupdate(state.getCurrenttime());
             System.out.println("states item map "+ state.getUserID());
+            System.out.println("Last update"+this.lastupdate);
         } catch (Exception e) {
             // TODO: handle exception
             e.printStackTrace();
@@ -377,7 +378,12 @@ public class Replica implements Replication{
     public boolean ping() throws RemoteException {
         return true;
     }
-    
+    public Long getLastupdate() {
+        return lastupdate;
+    }
+    public void setLastupdate(Long lastupdate) {
+        this.lastupdate = lastupdate;
+    }
     
     
     

@@ -284,7 +284,7 @@ private Replication getAliveReplica() throws RemoteException, NotBoundException 
             registry.unbind(primaryReplica);
         } catch (NotBoundException e) {
             // TODO Auto-generated catch block
-            e.printStackTrace();
+            // e.printStackTrace();
         }
 
         // Choose a new primary replica

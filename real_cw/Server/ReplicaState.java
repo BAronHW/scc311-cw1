@@ -18,6 +18,7 @@ public class ReplicaState implements Serializable {
     private PublicKey publicKey;
     private PrivateKey privateKey;
     private int itemid;
+    private Long currenttime;
 
     public ReplicaState(
             ConcurrentHashMap<Integer, AuctionItem> itemMap,
@@ -25,7 +26,8 @@ public class ReplicaState implements Serializable {
             ConcurrentHashMap<Integer, String> userHashMap,
             ConcurrentHashMap<Integer, Integer> highestBidders,
             int userID,
-            int itemid
+            int itemid,
+            Long currenttime
     ) {
         this.itemMap = itemMap;
         this.useridanditem = useridanditem;
@@ -36,6 +38,7 @@ public class ReplicaState implements Serializable {
         // this.usertokenmap = usertokenmap;
         this.userID = userID;
         this.itemid = itemid;
+        this.currenttime = currenttime;
         // this.publicKey = publicKey;
         // this.privateKey = privateKey;
     }
@@ -114,5 +117,11 @@ public class ReplicaState implements Serializable {
         }
         public void setItemid(int itemid) {
             this.itemid = itemid;
+        }
+        public void setCurrenttime(Long currenttime) {
+            this.currenttime = currenttime;
+        }
+        public Long getCurrenttime() {
+            return currenttime;
         }
     }

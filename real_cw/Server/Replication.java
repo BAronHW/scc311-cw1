@@ -27,4 +27,6 @@ public interface Replication extends Remote{
     public void setIsprimary(boolean isprimary) throws RemoteException;
     public boolean getisprimary() throws RemoteException;
     public boolean ping() throws RemoteException;
+    public Long getLastupdate() throws RemoteException;
+    public void setLastupdate(Long lastupdate) throws RemoteException;
 }
