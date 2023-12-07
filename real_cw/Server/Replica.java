@@ -27,14 +27,6 @@ public class Replica implements Replication{
         this.userID = 0;
         this.replicaID = replicaID;
         this.replicationMap = new HashMap<Integer, Replication>();
-        for (Replication otherreplica : this.replicationMap.values()) {
-            try {
-                otherreplica.getState(replicaID);
-            } catch (NotBoundException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
-        }
     }
 
     public static void main(String[] args) {
@@ -51,7 +43,9 @@ public class Replica implements Replication{
             String replicaname = "Replica "+Integer.toString(replicaID);
             registry.rebind(replicaname, stub);
             server.notifyReplicas();
+            server.syncWithPrimaryReplica();
 
+            //foreachloop all replicas and run notify replicas on them 
             //get every replica in the hashmap except for the primary replica
             //for each of the replicas that is not primary call server.getstate()
             // server.getState(replicationMap.get(1));
@@ -65,7 +59,7 @@ public class Replica implements Replication{
             //     }
                 
             // }
-                
+            //foreach replica that exist in the rmi room find the one where isprimary is set to true and then get its replicaid and use it to call getstate function
             
         
             System.out.println("Server ready");
@@ -76,6 +70,34 @@ public class Replica implements Replication{
         }
     }
 
+    public void syncWithPrimaryReplica() {
+        try {
+            // Iterate through all replicas in the RMI room
+            for (Replication replica : getReplicationMap().values()) {
+                try {
+                    // Check if the current replica is the primary one
+                    if (replica.getisprimary()) {
+                        // Get the replica ID of the primary replica
+                        int primaryReplicaID = replica.getReplicaID();
+    
+                        // Call getState on the primary replica
+                        getState(primaryReplicaID);
+                        System.out.println("Synced with primary replica: " + primaryReplicaID);
+                        return; // Exit the loop after syncing with the primary replica
+                    }
+                } catch (RemoteException e) {
+                    // Handle RemoteException if it occurs during the RMI call
+                    e.printStackTrace(); // Consider logging the exception
+                }
+            }
+    
+            // If no primary replica is found, print a message or handle it as needed
+            System.out.println("No primary replica found.");
+        } catch (Exception e) {
+            // Handle other exceptions if needed
+            e.printStackTrace(); // Consider logging the exception
+        }
+    }
 
     
     public int getReplicaID() throws RemoteException {
@@ -298,12 +320,14 @@ public class Replica implements Replication{
             for (String replicaName : replicas) {
                 if (!replicaName.equals("Replica " + replicaID)) {
                     try {
+                        //replica belongs other replicas stored in the hashmap
                         Replication replica = (Replication) registry.lookup(replicaName);
                         replicationMap.put(replica.getReplicaID(), replica);
+                        //this replica is the one that matches with the current replica name
                         Replication myselfreplica = (Replication) registry.lookup("Replica "+this.getReplicaID());
                         replica.addToReplicationMap(replicaID, myselfreplica);
                         System.out.println(replica.getReplicaID());
-                        myselfreplica.getState(replicaID);
+                        // myselfreplica.getState(replicaID);
                         
                         System.out.println(" Added replica " + replica.getReplicaID());
                     } catch (Exception e) {
@@ -358,8 +382,3 @@ public class Replica implements Replication{
     
     
 }
-
-/*
- * TODO: 
- * 1. fix getspec
- */

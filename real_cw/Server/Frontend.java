@@ -280,6 +280,7 @@ private Replication getAliveReplica() throws RemoteException, NotBoundException 
     // Check if the primary replica is alive.
     if (pingReplica(replica)==false) {
         try {
+            // replica.setIsprimary(false);
             registry.unbind(primaryReplica);
         } catch (NotBoundException e) {
             // TODO Auto-generated catch block
